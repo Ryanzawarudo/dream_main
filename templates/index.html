@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>夢境觀測</title>
+</head>
+<body>
+    <div id="topAuthArea" class="top-auth-area">
+        <span id="topUserName" class="top-user-name"></span>
+        <button id="topLoginButton" class="top-login-button">登入</button>
+    </div>
+    <main class="content">
+        <section id="hall" class="panel active">
+            <h2>觀測大廳</h2>
+            <p>在這裡觀察夢境的全貌，查看最新的夢境指標、事件與能量流動。</p>
+            <div class="action-grid">
+                <a href="/weaver" class="action-button" style="text-decoration: none; display: inline-block; text-align: center;">開啟今日夢境紀錄</a>
+                <button class="action-button" data-target="subconscious">進入心靈數據室</button>
+                <button class="action-button" data-target="capsule">時空膠囊保險箱</button>
+                <button id="inspireBtn" class="action-button-secondary">隨機靈感投遞</button>
+            </div>
+            <div id="inspirationOutput" class="inspiration-box">按下「隨機靈感投遞」來獲取夢境關鍵詞組合。</div>
+        </section>
+        <section id="weaving" class="panel">
+            <h2>夢境編織室</h2>
+            <p>透過直覺與符號，編織夢境場景與意象，讓創造力自由流動。</p>
+        </section>
+        <section id="subconscious" class="panel">
+            <h2>潛意識觀測室</h2>
+            <p>深入潛意識深層，解析夢境碎片與內在訊息。</p>
+        </section>
+        <section id="capsule" class="panel">
+            <h2>時空膠囊封存室</h2>
+            <p>將重要夢境記錄存入時空膠囊，以便未來回顧與再探索。</p>
+        </section>
+
+        <section id="page-login" class="panel">
+            <div class="auth-panel">
+                <h2>登入 Subconscious Observation System</h2>
+                <p class="form-note">使用 Email 與密碼登入。</p>
+                <form id="loginForm" class="auth-form">
+                    <div class="form-field">
+                        <label for="loginEmail">Email</label>
+                        <input id="loginEmail" name="email" type="email" autocomplete="username" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="loginPassword">Password</label>
+                        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="primary-button">Log In</button>
+                    <div id="loginMessage" class="validation-message"></div>
+                </form>
+                <div class="auth-footer">
+                    <a href="#signup" class="auth-link">Create Account</a>
+                    <a href="#forgot" class="auth-link">Forgot Password?</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-signup" class="panel">
+            <div class="auth-panel">
+                <h2>建立新帳號</h2>
+                <p class="form-note">帳號將用於存取 Subconscious Observation System。</p>
+                <form id="signupForm" class="auth-form">
+                    <div class="form-field">
+                        <label for="signupUsername">Username</label>
+                        <input id="signupUsername" name="username" type="text" autocomplete="username" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="signupEmail">Email</label>
+                        <input id="signupEmail" name="email" type="email" autocomplete="email" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="signupPassword">Password</label>
+                        <input id="signupPassword" name="password" type="password" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="signupConfirmPassword">Confirm Password</label>
+                        <input id="signupConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
+                    </div>
+                    <div id="signupValidation" class="validation-message"></div>
+                    <button id="signupButton" type="submit" class="primary-button">Create Account</button>
+                    <div id="signupMessage" class="validation-message"></div>
+                </form>
+                <div class="auth-footer">
+                    <a href="#login" class="auth-link">Back to Login</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-forgot" class="panel">
+            <div class="auth-panel">
+                <h2>重設密碼</h2>
+                <p class="form-note">輸入註冊 Email 以接收驗證碼。</p>
+                <div id="forgotStage1" class="forgot-stage active">
+                    <form id="forgotEmailForm" class="auth-form">
+                        <div class="form-field">
+                            <label for="forgotEmail">Email</label>
+                            <input id="forgotEmail" name="email" type="email" autocomplete="email" required>
+                        </div>
+                        <button id="sendCodeButton" type="button" class="primary-button">Send Verification Code</button>
+                        <div id="forgotEmailMessage" class="validation-message"></div>
+                    </form>
+                </div>
+                <div id="forgotStage2" class="forgot-stage">
+                    <form id="resetPasswordForm" class="auth-form">
+                        <div class="form-field">
+                            <label for="verificationCode">6-Digit Verification Code</label>
+                            <input id="verificationCode" name="code" type="text" inputmode="numeric" pattern="\d{6}" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="newPassword">New Password</label>
+                            <input id="newPassword" name="password" type="password" autocomplete="new-password" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="confirmNewPassword">Confirm New Password</label>
+                            <input id="confirmNewPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
+                        </div>
+                        <div id="resetValidation" class="validation-message"></div>
+                        <button id="resetPasswordButton" type="submit" class="primary-button">Reset Password</button>
+                        <div id="resetPasswordMessage" class="validation-message"></div>
+                    </form>
+                </div>
+                <div class="auth-footer">
+                    <a href="#login" class="auth-link">Back to Login</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        
+        const dreamKeywords = [
+            '月光軌跡',
+            '星辰裂縫',
+            '水晶迷宮',
+            '記憶碎片',
+            '幽夜花園',
+            '風之回廊',
+            '時間漩渦',
+            '深海心聲',
+            '銀色羽翼',
+            '幻影之門'
+        ];
+
+        const inspireBtn = document.getElementById('inspireBtn');
+        const inspirationOutput = document.getElementById('inspirationOutput');
+
+        function getRandomKeywords(count) {
+            const selected = [];
+            const pool = [...dreamKeywords];
+            while (selected.length < count && pool.length > 0) {
+                const index = Math.floor(Math.random() * pool.length);
+                selected.push(pool.splice(index, 1)[0]);
+            }
+            return selected;
+        }
+
+        inspireBtn.addEventListener('click', () => {
+            const keywords = getRandomKeywords(3);
+            inspirationOutput.textContent = `夢境靈感：${keywords.join(' / ')}`;
+        });
+
+        function showPage(pageId) {
+            document.querySelectorAll('.panel').forEach((panel) => {
+                panel.classList.toggle('active', panel.id === pageId);
+            });
+        }
+
+        function routeFromHash() {
+            const hash = window.location.hash.replace('#', '');
+            const allowed = ['login', 'signup', 'forgot'];
+            if (allowed.includes(hash)) {
+                showPage(`page-${hash}`);
+                if (hash === 'forgot') {
+                    showForgotStage(1);
+                }
+                return;
+            }
+            showPage('hall');
+        }
+
+        function setValidationMessage(element, text, success = false) {
+            element.textContent = text;
+            element.className = `validation-message ${success ? 'success' : 'error'}`;
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const messageEl = document.getElementById('loginMessage');
+
+            if (!email || !password) {
+                setValidationMessage(messageEl, '請輸入 Email 與密碼。');
+                return;
+            }
+
+            const response = await fetch(`${API_BASE}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                setValidationMessage(messageEl, '登入成功，正在進入系統...', true);
+                currentUser = { email, username: result.user?.username || '' };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateTopButton();
+                window.location.hash = '';
+            } else {
+                setValidationMessage(messageEl, result.message || '登入失敗，請檢查帳號密碼。');
+            }
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            const username = document.getElementById('signupUsername').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const messageEl = document.getElementById('signupMessage');
+            const validationEl = document.getElementById('signupValidation');
+
+            if (!username || !email || !password || !confirmPassword) {
+                setValidationMessage(messageEl, '請完整填寫所有欄位。');
+                return;
+            }
+            if (password !== confirmPassword) {
+                setValidationMessage(validationEl, '密碼與確認密碼不一致。');
+                return;
+            }
+
+            const response = await fetch(`${API_BASE}/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password, confirmPassword })
+            });
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                setValidationMessage(messageEl, '帳號建立完成，請登入。', true);
+                window.location.hash = 'login';
+            } else {
+                setValidationMessage(messageEl, result.message || '註冊失敗，請重試。');
+            }
+        }
+
+        async function sendVerificationCode() {
+            const email = document.getElementById('forgotEmail').value.trim();
+            const messageEl = document.getElementById('forgotEmailMessage');
+
+            if (!email) {
+                setValidationMessage(messageEl, '請輸入註冊 Email。');
+                return;
+            }
+
+            const response = await fetch(`${API_BASE}/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                setValidationMessage(messageEl, '驗證碼已寄出，請檢查信箱。', true);
+                showForgotStage(2);
+            } else {
+                setValidationMessage(messageEl, result.message || '無法寄送驗證碼。');
+            }
+        }
+
+        function showForgotStage(stage) {
+            document.querySelectorAll('.forgot-stage').forEach((section, index) => {
+                section.classList.toggle('active', index + 1 === stage);
+            });
+        }
+
+        async function handleResetPassword(event) {
+            event.preventDefault();
+            const email = document.getElementById('forgotEmail').value.trim();
+            const code = document.getElementById('verificationCode').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmNewPassword').value;
+            const messageEl = document.getElementById('resetPasswordMessage');
+            const validationEl = document.getElementById('resetValidation');
+
+            if (!code || !password || !confirmPassword) {
+                setValidationMessage(messageEl, '請填寫所有重設欄位。');
+                return;
+            }
+            if (password !== confirmPassword) {
+                setValidationMessage(validationEl, '新密碼與確認密碼不一致。');
+                return;
+            }
+
+            const response = await fetch(`${API_BASE}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code, password })
+            });
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                setValidationMessage(messageEl, '密碼重設成功，請重新登入。', true);
+                window.location.hash = 'login';
+            } else {
+                setValidationMessage(messageEl, result.message || '重設失敗，請確認驗證碼與密碼。');
+            }
+        }
+
+        function setupPasswordMatchValidation() {
+            const passwordField = document.getElementById('signupPassword');
+            const confirmField = document.getElementById('signupConfirmPassword');
+            const validationEl = document.getElementById('signupValidation');
+
+            const checkMatch = () => {
+                if (!passwordField.value || !confirmField.value) {
+                    validationEl.textContent = '';
+                    return;
+                }
+                if (passwordField.value === confirmField.value) {
+                    setValidationMessage(validationEl, '密碼一致。', true);
+                } else {
+                    setValidationMessage(validationEl, '密碼不一致。');
+                }
+            };
+
+            passwordField.addEventListener('input', checkMatch);
+            confirmField.addEventListener('input', checkMatch);
+        }
+
+        function setupForgotPasswordValidation() {
+            const newPassword = document.getElementById('newPassword');
+            const confirmNewPassword = document.getElementById('confirmNewPassword');
+            const validationEl = document.getElementById('resetValidation');
+
+            const checkMatch = () => {
+                if (!newPassword.value || !confirmNewPassword.value) {
+                    validationEl.textContent = '';
+                    return;
+                }
+                if (newPassword.value === confirmNewPassword.value) {
+                    setValidationMessage(validationEl, '新密碼一致。', true);
+                } else {
+                    setValidationMessage(validationEl, '新密碼不一致。');
+                }
+            };
+
+            newPassword.addEventListener('input', checkMatch);
+            confirmNewPassword.addEventListener('input', checkMatch);
+        }
+
+        function updateTopButton() {
+            const button = document.getElementById('topLoginButton');
+            const nameLabel = document.getElementById('topUserName');
+            if (currentUser) {
+                button.textContent = '登出';
+                button.onclick = handleLogout;
+                nameLabel.textContent = currentUser.username ? `Hello, ${currentUser.username}` : '';
+            } else {
+                button.textContent = '登入';
+                button.onclick = () => {
+                    window.location.hash = 'login';
+                };
+                nameLabel.textContent = '';
+            }
+        }
+
+        function handleLogout() {
+            const confirmed = confirm('確實要登出嗎？');
+            if (confirmed) {
+                currentUser = null;
+                localStorage.removeItem('currentUser');
+                updateTopButton();
+                showPage('hall');
+                window.location.hash = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTopButton();
+            routeFromHash();
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('signupForm').addEventListener('submit', handleSignup);
+            document.getElementById('forgotEmailForm').addEventListener('submit', (event) => event.preventDefault());
+            document.getElementById('sendCodeButton').addEventListener('click', sendVerificationCode);
+            document.getElementById('resetPasswordForm').addEventListener('submit', handleResetPassword);
+            setupPasswordMatchValidation();
+            setupForgotPasswordValidation();
+        });
+
+        window.addEventListener('hashchange', routeFromHash);
+    </script>
+</body>
+</html>
