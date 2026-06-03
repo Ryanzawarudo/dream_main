@@ -4,7 +4,7 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -19,7 +19,7 @@ users = {
     }
 }
 verification_codes = {}
-
+#廖子峰
 # =======================================================
 # 🔒 在這裡直接填入你的 GMAIL 帳號與 16 位應用程式密碼
 # =======================================================
@@ -134,9 +134,9 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 
-# ------------------ Dream Weaver Room 後端擴充（新增） ------------------
+# ------------------ Dream Weaver Room 後端擴充 ------------------
 # 以下內容會附加在檔案末尾，採「新增」方式，不會改動上方任何既有路由或設定。
-
+#   鄭崇恩
 # 從設定檔讀取 Gemini API Key，並用指定的模型初始化 ChatGoogleGenerativeAI
 from configparser import ConfigParser
 # 建立 ConfigParser 物件以讀取 config.ini
@@ -163,19 +163,24 @@ def generate_dream_image(image_prompt: str) -> str:
         # 通用結構與畫質防禦詞：同時兼顧人體（anatomy）與物體邊緣（proportions, clean lines）
         encoded_prompt = urllib.parse.quote(f"{image_prompt}, surrealism style, crisp anatomy, flawless proportions, clean clear outlines, refined textures, 4k resolution")
         
-        # 2. 呼叫完全免金鑰、走不同伺服器節點的免費繪圖 API
-        url = f"https://image.pollinations.ai/p/{encoded_prompt}?width=1024&height=1024&model=flux&seed=42"
+        # 2. 呼叫 Pollinations 繪圖 API（API key 從 config.ini 讀取）
+        pollinations_key = config.get('Pollinations', 'API_KEY', fallback='')
+        url = f"https://gen.pollinations.ai/image/{encoded_prompt}?model=flux&width=1024&height=1024&seed=0&enhance=false&key={pollinations_key}"
         
         # 3. 發送 GET 請求取得圖片二進位數據
         response = requests.get(url, timeout=60) # 設定較長的超時時間以應對可能的延遲
         response.raise_for_status()
         
-        # 4. 轉成 Base64 字串回傳給前端
+        # 4. 儲存圖片到 static/uploads，並回傳前端可直接存取的 URL
         image_bytes = response.content
-        base64_string = base64.b64encode(image_bytes).decode("utf-8")
-        return f"data:image/jpeg;base64,{base64_string}"
+        filename = f"dream_{datetime.now().strftime('%Y%m%d%H%M%S')}_{random.randint(1000,9999)}.jpg"
+        file_path = os.path.join(UPLOADS_FOLDER, filename)
+        with open(file_path, 'wb') as f:
+            f.write(image_bytes)
+        return f"/static/uploads/{filename}"
     except Exception as e:
         print(f"\n❌ 【備用繪圖 API 失敗報錯】: {e}\n")
+        print(f"\nprompt: {image_prompt}\n")
         return ""
 # =========================================================================
 
@@ -192,16 +197,38 @@ def weaver():
     # 將 user 傳給模板以便前端視需要顯示已登入資訊；若為 None 則代表訪客
     return render_template('weaver.html', user=user)
 
+@app.route('/data', methods=['GET'])
+def data():
+    user_id = session.get('user_id')
+    username = session.get('user')
+    if not user_id:
+        return render_template('data.html', user=None, dreams=[], message='請先登入後再進入心靈數據室。')
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT id, dream_content, reality_content, emotion_tag, ai_analysis, image_path, timestamp FROM dreams WHERE CAST(user_id AS TEXT) = ? ORDER BY timestamp DESC',
+        (str(user_id),)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    dreams = [dict(row) for row in rows]
+    return render_template('data.html', user=username, dreams=dreams, message=None)
+
 # ------------------ Dream Weaver Room 擴充結束 ------------------
 
 
 # ------------------ Dreams 資料表與儲存輔助函式（新增） ------------------
-# 以下程式碼會在應用啟動時建立一個本地 SQLite 資料庫檔案，並建立 `dreams` 資料表（若尚未存在）
+# 以下程式碼會在應用啟動時建立一個本地 Lite`SQ` 資料庫檔案，並建立 `dreams` 資料表（若尚未存在）
 import sqlite3
 from datetime import datetime
 
 # 資料庫檔案路徑（放在專案根目錄，檔名為 dreams.db）
 DB_PATH = os.path.join(os.path.dirname(__file__), 'dreams.db')
+UPLOADS_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+os.makedirs(UPLOADS_FOLDER, exist_ok=True)
 
 
 def init_dreams_table():
@@ -229,6 +256,7 @@ def init_dreams_table():
         reality_content TEXT,
         emotion_tag TEXT,
         ai_analysis TEXT,
+        image_path TEXT,
         timestamp TEXT DEFAULT (datetime('now','localtime')),
         FOREIGN KEY(user_id) REFERENCES users(id)
     )
@@ -243,7 +271,20 @@ def init_dreams_table():
 init_dreams_table()
 
 
-def save_dream_to_db(user_id, dream, reality=None, emotion=None, analysis=None):
+def ensure_dreams_table_schema():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('PRAGMA table_info(dreams)')
+    columns = [row[1] for row in cursor.fetchall()]
+    if 'image_path' not in columns:
+        cursor.execute('ALTER TABLE dreams ADD COLUMN image_path TEXT')
+    conn.commit()
+    conn.close()
+
+ensure_dreams_table_schema()
+
+
+def save_dream_to_db(user_id, dream, reality=None, emotion=None, analysis=None, image_path=None):
     """
     將夢境資料寫入 `dreams` 資料表的輔助函式。
 
@@ -282,10 +323,10 @@ def save_dream_to_db(user_id, dream, reality=None, emotion=None, analysis=None):
     # 使用參數化查詢避免 SQL injection
     cursor.execute(
         '''
-        INSERT INTO dreams (user_id, dream_content, reality_content, emotion_tag, ai_analysis)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO dreams (user_id, dream_content, reality_content, emotion_tag, ai_analysis, image_path)
+        VALUES (?, ?, ?, ?, ?, ?)
         ''',
-        (user_id, dream, reality, emotion, analysis)
+        (user_id, dream, reality, emotion, analysis, image_path)
     )
 
     conn.commit()
@@ -410,14 +451,6 @@ def analyze_dream():
     if not ai_analysis:
         ai_analysis = raw if isinstance(raw, str) else str(raw)
 
-   # 若使用者已登入（session 中有 user_id），則把此筆夢境儲存到資料庫
-    try:
-        session_user_id = session.get('user_id')
-        if session_user_id:
-            save_dream_to_db(session_user_id, dream, reality, emotion_tag, ai_analysis)
-    except Exception:
-        pass  # 資料庫儲存失敗時安全的 pass，不影響網頁回傳
-
     # 1. 取出 Gemini 回傳 JSON 中的 image_prompt
     image_prompt = ""
     if isinstance(parsed, dict):
@@ -426,7 +459,15 @@ def analyze_dream():
     # 2. 呼叫第一步做好的影像生成函式
     image_url = generate_dream_image(image_prompt) if image_prompt else ""
 
-    # 3. 回傳給前端，記得把 image_url 一併打包送出
+    # 3. 若使用者已登入，將生成圖片路徑一併存儲到資料庫
+    try:
+        session_user_id = session.get('user_id')
+        if session_user_id:
+            save_dream_to_db(session_user_id, dream, reality, emotion_tag, ai_analysis, image_url or None)
+    except Exception:
+        pass  # 資料庫儲存失敗時安全的 pass，不影響網頁回傳
+
+    # 4. 回傳給前端，記得把 image_url 一併打包送出
     return jsonify(success=True, result={
         'emotion_tag': emotion_tag,
         'ai_analysis': ai_analysis,
