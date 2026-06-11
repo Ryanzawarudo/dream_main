@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電流急急棒遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            border: 3px solid #333;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            display: block;
+            margin: 20px auto;
+            cursor: crosshair;
+            border-radius: 8px;
+            position: relative;
+            width: 684px;
+            max-width: 100%;
+            height: auto;
+            aspect-ratio: 684 / 450;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .info-box {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .info-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status {
+            font-size: 1.2em;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        .status.playing {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .status.failed {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            animation: pulse 0.5s infinite;
+        }
+
+        .status.success {
+            background: #cce5ff;
+            color: #004085;
+            border: 2px solid #b8daff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .instructions {
+            text-align: left;
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            color: #333;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .instructions h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+        }
+
+        .fail-image-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .fail-image-container.show {
+            display: flex;
+        }
+
+        .fail-image-content {
+            position: relative;
+            max-width: 50%;
+            max-height: 50vh;
+            animation: slideUp 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fail-image-content img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .close-fail-image {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .close-fail-image:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .server-status {
+            background: #e8f4f8;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .server-status.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        /* 狀態提示 Modal */
+        .status-modal-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .status-modal-container.show {
+            display: flex;
+        }
+
+        .status-modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.5s ease;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .status-modal-content h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .status-modal-content p {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .status-modal-content button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .status-modal-content button:hover {
+            background: #764ba2;
+        }
+
+        /* 失敗樣式 */
+        .status-modal-content.failed {
+            border-left: 5px solid #dc3545;
+        }
+
+        .status-modal-content.failed h2 {
+            color: #dc3545;
+        }
+
+        /* 成功樣式 */
+        .status-modal-content.success {
+            border-left: 5px solid #28a745;
+        }
+
+        .status-modal-content.success h2 {
+            color: #28a745;
+        }
+
+        /* 遊戲說明 Modal */
+        .instructions-modal-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .instructions-modal-container.show {
+            display: flex;
+        }
+
+        .instructions-modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.5s ease;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .instructions-modal-content h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .instructions-modal-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .instructions-modal-content li {
+            padding: 12px 0;
+            font-size: 1.1em;
+            color: #333;
+            line-height: 1.6;
+            border-bottom: 1px solid #eee;
+        }
+
+        .instructions-modal-content li:last-child {
+            border-bottom: none;
+        }
+
+        .instructions-modal-content button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .instructions-modal-content button:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>電流急急棒遊戲</h1>
+
+        <canvas id="gameCanvas" width="684" height="450"></canvas>
+
+        <div class="info-panel">
+            <div class="info-box">
+                <div class="info-label">進度</div>
+                <div class="info-value" id="progress">0%</div>
+            </div>
+        </div>
+
+        <div class="status playing" id="status">準備好了！點擊畫面開始遊戲</div>
+    </div>
+
+    <div class="instructions-modal-container" id="instructionsModalContainer">
+        <div class="instructions-modal-content">
+            <h2>遊戲說明</h2>
+            <ul>
+                <li>    心情很好是吧，給你一點好玩的</li>
+                <li>    不要撒到邊邊到達終點即可過關</li>
+            </ul>
+            <button onclick="closeInstructionsModal()">開始遊戲</button>
+        </div>
+    </div>
+
+    <div class="fail-image-container" id="failImageContainer">
+        <div class="fail-image-content" id="failImageContent">
+            <button class="close-fail-image" onclick="closeFailImage()">✕</button>
+        </div>
+    </div>
+
+    <div class="status-modal-container" id="statusModalContainer">
+        <div class="status-modal-content" id="statusModalContent">
+            <h2 id="statusModalTitle"></h2>
+            <p id="statusModalMessage"></p>
+            <button onclick="closeStatusModal()">點擊重試</button>
+        </div>
+    </div>
+
+    <audio id="backgroundMusic" preload="auto" loop autoplay muted></audio>
+    <audio id="successMusic" preload="auto"></audio>
+    <audio id="scareMusic" preload="auto"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('status');
+        const progressDiv = document.getElementById('progress');
+        const failImageContainer = document.getElementById('failImageContainer');
+        const failImageContent = document.getElementById('failImageContent');
+        const statusModalContainer = document.getElementById('statusModalContainer');
+        const statusModalContent = document.getElementById('statusModalContent');
+        const statusModalTitle = document.getElementById('statusModalTitle');
+        const statusModalMessage = document.getElementById('statusModalMessage');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const successMusic = document.getElementById('successMusic');
+        const scareMusic = document.getElementById('scareMusic');
+        // 設置音量
+        backgroundMusic.volume = 0.5;
+        successMusic.volume = 0.8;
+        scareMusic.volume = 1;
+
+        let unmuteHandlerAdded = false;
+        
+        function enableAudioUnmute() {
+            if (!unmuteHandlerAdded) {
+                unmuteHandlerAdded = true;
+                backgroundMusic.muted = false;
+                console.log('✓ 取消背景音樂靜音');
+                document.removeEventListener('click', enableAudioUnmute);
+                document.removeEventListener('touchstart', enableAudioUnmute);
+            }
+        }
+        
+        document.addEventListener('click', enableAudioUnmute, { once: true });
+        document.addEventListener('touchstart', enableAudioUnmute, { once: true });
+
+        backgroundMusic.addEventListener('error', (event) => {
+            console.error('背景音樂載入失敗', event);
+        });
+        successMusic.addEventListener('error', (event) => {
+            console.error('成功音樂載入失敗', event);
+        });
+        scareMusic.addEventListener('error', (event) => {
+            console.error('驚嚇音樂載入失敗', event);
+        });
+
+        backgroundMusic.addEventListener('canplaythrough', () => {
+            console.log('背景音樂已就緒，可播放');
+        });
+
+        const gameState = {
+            isPlaying: false,
+            isFailed: false,
+            isSuccess: false,
+            mouseX: 400,
+            mouseY: 250,
+            pathWidth: 30 * 0.95,
+            musicData: {
+                background: null,
+                success: null,
+                scare: null
+            }
+        };
+
+        const pathPoints = [
+            { x: 42.75, y: 339 },
+            { x: 111.15, y: 210 },
+            { x: 179.55, y: 420 },
+            { x: 247.95, y: 145 },
+            { x: 307.8, y: 371 },
+            { x: 384.75, y: 97 },
+            { x: 444.6, y: 331 },
+            { x: 521.55, y: 178 },
+            { x: 589.95, y: 420 },
+            { x: 658.35, y: 161 }
+        ];
+
+        async function checkMusicAvailability() {
+            try {
+                const response = await fetch('/api/check-music');
+                const data = await response.json();
+                console.log('checkMusicAvailability response:', data);
+                
+                if (data.background && data.background.length > 0) {
+                    backgroundMusic.src = `/static/games/electric/music/${data.background[0]}`;
+                    backgroundMusic.load();
+                    gameState.musicData.background = data.background[0];
+                    console.log(`✓ 背景音樂已載入: ${data.background[0]}`);
+                    backgroundMusic.addEventListener('canplaythrough', () => {
+                        backgroundMusic.play().catch(error => {
+                            console.log('頁面加載時自動播放失敗（正常情況，需要用戶交互）:', error);
+                        });
+                    }, { once: true });
+                }
+                
+                if (data.success && data.success.length > 0) {
+                    successMusic.src = `/static/games/electric/music/${data.success[0]}`;
+                    successMusic.load();
+                    gameState.musicData.success = data.success[0];
+                    console.log(`✓ 成功音樂已載入: ${data.success[0]}`);
+                }
+                
+                if (data.scare && data.scare.length > 0) {
+                    scareMusic.src = `/static/games/electric/music/${data.scare[0]}`;
+                    scareMusic.load();
+                    gameState.musicData.scare = data.scare[0];
+                    console.log(`✓ 驚嚇音樂已載入: ${data.scare[0]}`);
+                }
+
+            } catch (error) {
+                console.warn('無法檢查音樂文件:', error);
+            }
+        }
+
+        function getPathSegmentAt(x, y) {
+            let minDistance = Infinity;
+            let closestSegment = null;
+            let closestPoint = null;
+            let progressPercentage = 0;
+
+            for (let i = 0; i < pathPoints.length - 1; i++) {
+                const p1 = pathPoints[i];
+                const p2 = pathPoints[i + 1];
+
+                const distance = distancePointToSegment(x, y, p1.x, p1.y, p2.x, p2.y);
+                const point = closestPointOnSegment(x, y, p1.x, p1.y, p2.x, p2.y);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestSegment = { p1, p2, index: i };
+                    closestPoint = point;
+                    
+                    const totalSegments = pathPoints.length - 1;
+                    const currentProgress = i / totalSegments;
+                    const segmentLength = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
+                    const pointLength = Math.sqrt((point.x - p1.x) ** 2 + (point.y - p1.y) ** 2);
+                    progressPercentage = (currentProgress + (pointLength / segmentLength) / totalSegments) * 100;
+                }
+            }
+
+            return {
+                distance: minDistance,
+                segment: closestSegment,
+                point: closestPoint,
+                progress: progressPercentage
+            };
+        }
+
+        function distancePointToSegment(x, y, x1, y1, x2, y2) {
+            const A = x - x1;
+            const B = y - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+
+            let param = -1;
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = x - xx;
+            const dy = y - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function closestPointOnSegment(x, y, x1, y1, x2, y2) {
+            const A = x - x1;
+            const B = y - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+
+            let param = -1;
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            return { x: xx, y: yy };
+        }
+
+        function draw() {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawPath();
+            drawCursor();
+
+            if (gameState.isPlaying && !gameState.isFailed && !gameState.isSuccess) {
+                checkGameStatus();
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        function drawPath() {
+            const pathWidth = gameState.pathWidth;
+
+            drawSmoothStroke(pathPoints, -pathWidth / 2 - 3, '#8B4513', 15);
+            drawSmoothStroke(pathPoints, pathWidth / 2 + 3, '#8B4513', 15);
+            drawSmoothStroke(pathPoints, 0, '#FFD700', pathWidth);
+
+            // 繪製起點
+            ctx.fillStyle = '#28a745';
+            ctx.beginPath();
+            ctx.arc(pathPoints[0].x, pathPoints[0].y, 12 * 0.95, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 繪製終點
+            ctx.fillStyle = '#ffc107';
+            ctx.beginPath();
+            ctx.arc(pathPoints[pathPoints.length - 1].x, pathPoints[pathPoints.length - 1].y, 12 * 0.95, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawSmoothStroke(points, offsetX, strokeStyle, lineWidth) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(points[0].x + offsetX, points[0].y);
+
+            for (let i = 1; i < points.length - 1; i++) {
+                const current = { x: points[i].x + offsetX, y: points[i].y };
+                const next = { x: points[i + 1].x + offsetX, y: points[i + 1].y };
+                const mid = {
+                    x: (current.x + next.x) / 2,
+                    y: (current.y + next.y) / 2
+                };
+                ctx.quadraticCurveTo(current.x, current.y, mid.x, mid.y);
+            }
+
+            const last = { x: points[points.length - 1].x + offsetX, y: points[points.length - 1].y };
+            ctx.lineTo(last.x, last.y);
+            ctx.stroke();
+        }
+
+        function drawCursor() {
+            const pathInfo = getPathSegmentAt(gameState.mouseX, gameState.mouseY);
+            const isOnPath = pathInfo.distance <= gameState.pathWidth / 2;
+
+            if (gameState.isFailed) {
+                ctx.fillStyle = 'rgba(220, 53, 69, 0.6)';
+                ctx.strokeStyle = '#dc3545';
+            } else if (gameState.isSuccess) {
+                ctx.fillStyle = 'rgba(40, 167, 69, 0.6)';
+                ctx.strokeStyle = '#28a745';
+            } else if (isOnPath) {
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.4)';
+                ctx.strokeStyle = '#667eea';
+            } else {
+                ctx.fillStyle = 'rgba(220, 53, 69, 0.4)';
+                ctx.strokeStyle = '#dc3545';
+            }
+
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(gameState.mouseX, gameState.mouseY, 15 * 0.95, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(gameState.mouseX, gameState.mouseY, 8 * 0.95, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function checkGameStatus() {
+            const pathInfo = getPathSegmentAt(gameState.mouseX, gameState.mouseY);
+
+            progressDiv.textContent = Math.min(Math.round(pathInfo.progress), 100) + '%';
+
+            // 檢查是否碰到牆壁
+            if (pathInfo.distance > gameState.pathWidth / 2) {
+                gameState.isFailed = true;
+                
+                // 停止背景音樂，撥放驚嚇音樂
+                playScareMusic();
+                showFailImage();
+
+            }
+
+            // 檢查是否到達終點
+            const endPoint = pathPoints[pathPoints.length - 1];
+            const distToEnd = Math.sqrt((gameState.mouseX - endPoint.x) ** 2 + (gameState.mouseY - endPoint.y) ** 2);
+            if (distToEnd < 25 * 0.95) {
+                gameState.isSuccess = true;
+                
+                // 停止背景音樂，延遲 0.5 秒後撥放勝利音樂
+                stopBackgroundMusic();
+                setTimeout(() => {
+                    playSuccessMusic();
+                }, 500);
+                
+                // 顯示成功 Modal
+                showStatusModal('success', '✓ 成功！');
+            }
+        }
+
+        function showStatusModal(type, title, message) {
+            statusModalTitle.textContent = title;
+            statusModalMessage.textContent = message;
+            statusModalContent.className = 'status-modal-content ' + type;
+            statusModalContainer.classList.add('show');
+        }
+
+        function closeStatusModal() {
+            statusModalContainer.classList.remove('show');
+            
+            gameState.isPlaying = false;
+            gameState.isFailed = false;
+            gameState.isSuccess = false;
+            progressDiv.textContent = '0%';
+            statusDiv.textContent = '準備好了！點擊綠球開始遊戲';
+            statusDiv.className = 'status playing';
+            closeFailImage('');
+            
+            // 停止所有音樂
+            stopAllMusic();
+        }
+        function closeInstructionsModal() {
+            const instructionsModalContainer = document.getElementById('instructionsModalContainer');
+            instructionsModalContainer.classList.remove('show');
+        }
+        function playBackgroundMusic() {
+            if (!gameState.musicData.background || !backgroundMusic.src) {
+                console.log('背景音樂尚未設定或尚未載入', gameState.musicData.background, backgroundMusic.src);
+                return;
+            }
+
+            backgroundMusic.currentTime = 0;
+            backgroundMusic.play().catch(error => {
+                console.log('背景音樂撥放失敗:', error);
+            });
+        }
+
+        function stopBackgroundMusic() {
+            if (backgroundMusic.src) {
+                backgroundMusic.pause();
+                backgroundMusic.currentTime = 0;
+            }
+        }
+
+        function playSuccessMusic() {
+            stopAllMusic();
+            if (gameState.musicData.success && successMusic.src) {
+                successMusic.currentTime = 0;
+                successMusic.play().catch(error => {
+                    console.log('成功音樂撥放失敗:', error);
+                });
+            }
+        }
+
+        function playScareMusic() {
+            stopBackgroundMusic();
+            if (gameState.musicData.scare && scareMusic.src) {
+                scareMusic.currentTime = 0;
+                scareMusic.play().catch(error => {
+                    console.log('驚嚇音樂撥放失敗:', error);
+                });
+            }
+        }
+
+        function stopAllMusic() {
+            backgroundMusic.pause();
+            successMusic.pause();
+            scareMusic.pause();
+            backgroundMusic.currentTime = 0;
+            successMusic.currentTime = 0;
+            scareMusic.currentTime = 0;
+        }
+
+        function showFailImage() {
+            const imageFiles = ['fail.png', 'fail.jpg', 'fail.gif'];
+            let imagesChecked = 0;
+
+            function checkNextImage() {
+                if (imagesChecked >= imageFiles.length) {
+                    return;
+                }
+
+                const fileName = imageFiles[imagesChecked];
+                const img = new Image();
+                
+                img.onload = function() {
+                    failImageContent.innerHTML = `
+                        <button class="close-fail-image" onclick="closeFailImage('failed')">✕</button>
+                        <img src="/static/games/electric/images/${fileName}" alt="遊戲失敗">
+                    `;
+                    failImageContainer.classList.add('show');
+                };
+                
+                img.onerror = function() {
+                    imagesChecked++;
+                    checkNextImage();
+                };
+                
+                img.src = `/static/games/electric/images/${fileName}`;
+            }
+
+            checkNextImage();
+        }
+
+        window.closeFailImage = function(type) {
+            failImageContainer.classList.remove('show');
+            
+            // 如果是失敗類型，關掉圖片後顯示失敗 Modal
+            if (type === 'failed') {
+                showStatusModal('failed', '✗ 遊戲失敗！', '撞到牆壁了！點擊重試');
+            }
+        };
+
+        document.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            gameState.mouseX = e.clientX - rect.left;
+            gameState.mouseY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('click', function(e) {
+            // 如果 Modal 正在顯示，不響應 canvas 點擊
+            if (statusModalContainer.classList.contains('show')) {
+                return;
+            }
+
+            if (!gameState.isPlaying && !gameState.isFailed && !gameState.isSuccess) {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                const startPoint = pathPoints[0];
+                const distToStart = Math.sqrt((clickX - startPoint.x) ** 2 + (clickY - startPoint.y) ** 2);
+
+                // 只有點擊綠色起點才能開始遊戲
+                if (distToStart <= 20 * 0.95) {
+                    gameState.isPlaying = true;
+                    statusDiv.textContent = '✓ 遊戲進行中...小心不要碰到牆壁！';
+                    statusDiv.className = 'status playing';
+
+                    gameState.mouseX = startPoint.x;
+                    gameState.mouseY = startPoint.y;
+                    progressDiv.textContent = '0%';
+
+                    // 開始撥放背景音樂
+                    playBackgroundMusic();
+                } else {
+                    statusDiv.textContent = '請點擊綠色起點開始遊戲';
+                    statusDiv.className = 'status playing';
+                }
+            }
+        });
+
+        // 初始化
+        console.log('🎮 遊戲初始化...');
+        checkMusicAvailability();
+        draw();
+        
+        // 顯示遊戲說明modal
+        const instructionsModalContainer = document.getElementById('instructionsModalContainer');
+        instructionsModalContainer.classList.add('show');
+    </script>
+</body>
+</html>

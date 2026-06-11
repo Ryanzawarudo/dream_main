@@ -1,0 +1,348 @@
+/* ==========================================================================
+   styleCapsule.css - 潛意識情緒圖表室專屬樣式
+   ========================================================================== */
+
+/* ============ 1. 基礎設定 ============ */
+html, body {
+  height: 100%;
+  margin: 0;
+  cursor: default;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+  background: radial-gradient(circle at top, #1b2540 0%, #0a0b10 35%, #090a0f 55%, #120e24 100%);
+  color: #edf2ff;
+  line-height: 1.6;
+  letter-spacing: 0.2px;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: rgba(123, 220, 255, 0.3);
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(123, 220, 255, 0.6);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(125, 91, 255, 0.08), transparent 25%),
+    radial-gradient(circle at 80% 10%, rgba(0, 245, 255, 0.08), transparent 20%),
+    radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.04), transparent 30%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============ 2. 星點背景層 ============ */
+#star-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.st {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: stTwk linear infinite;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+}
+@keyframes stTwk {
+  0%, 100% { opacity: 0.07; transform: scale(0.8); }
+  50% { opacity: var(--peak, 0.5); transform: scale(1.15); }
+}
+.st.major {
+  box-shadow: 0 0 4px 1px rgba(255,255,255,0.6), 0 0 10px 2px rgba(180,210,255,0.3);
+}
+@keyframes majorTwk {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.3); box-shadow: 0 0 6px 2px rgba(255,255,255,0.8), 0 0 15px 4px rgba(180,210,255,0.5); }
+}
+
+/* ============ 3. 背景環境光球 ============ */
+.ambient-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(120px);
+  opacity: 0.28;
+  z-index: -2;
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  animation: ambientDrift 20s ease-in-out infinite alternate;
+}
+.ambient-orb.one { width: 320px; height: 320px; left: 6%; top: 10%; background: radial-gradient(circle, rgba(102, 84, 255, 0.9), rgba(74, 48, 180, 0.1) 65%, transparent 70%); animation-duration: 24s; }
+.ambient-orb.two { width: 380px; height: 380px; right: 4%; top: 8%; background: radial-gradient(circle, rgba(0, 230, 255, 0.8), rgba(0, 112, 170, 0.05) 60%, transparent 72%); animation-duration: 26s; animation-delay: -6s; }
+.ambient-orb.three { width: 280px; height: 280px; left: 35%; bottom: 4%; background: radial-gradient(circle, rgba(174, 68, 255, 0.75), rgba(91, 35, 150, 0.05) 60%, transparent 72%); animation-duration: 22s; animation-delay: -10s; }
+
+@keyframes ambientDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  25%  { transform: translate3d(18px, -22px, 0) scale(1.08); }
+  50%  { transform: translate3d(-14px, 14px, 0) scale(0.95); }
+  75%  { transform: translate3d(12px, 20px, 0) scale(1.04); }
+  100% { transform: translate3d(-8px, -10px, 0) scale(1.12); }
+}
+
+/* ============ 4. 自訂月亮游標與粒子星軌 ============ */
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+#cursor-moon {
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  z-index: 999999;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.65));
+  opacity: 0.95;
+  transition: width 0.2s, height 0.2s;
+}
+#cursor-moon svg { width: 100%; height: 100%; display: block; }
+body.hovering #cursor-moon { width: 32px; height: 32px; filter: drop-shadow(0 0 12px rgba(123, 220, 255, 0.8)); }
+
+/* ============ 5. 主容器與玻璃擬態卡片 ============ */
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 100px 20px 60px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 20;
+}
+
+.chart-card {
+  width: 100%;
+  max-width: 960px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 50px rgba(5, 8, 18, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px rgba(155, 120, 255, 0.05);
+  border-radius: 28px;
+  padding: 48px 36px;
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  text-align: center;
+  animation: cardFloat 8s ease-in-out infinite alternate;
+}
+
+@keyframes cardFloat {
+  0%   { transform: translateY(0px); }
+  100% { transform: translateY(-8px); }
+}
+
+/* ============ 6. 標題與寶石裝飾線 ============ */
+.chart-title {
+  margin: 0 0 12px 0;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: #f4f6ff;
+  text-shadow: 0 0 30px rgba(155, 120, 255, 0.4), 0 0 60px rgba(100, 180, 255, 0.2);
+}
+.title-deco { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 28px; }
+.title-deco .dl, .title-deco .dr { height: 1px; width: 120px; }
+.title-deco .dl { background: linear-gradient(90deg, transparent, rgba(155, 120, 255, 0.7)); }
+.title-deco .dr { background: linear-gradient(90deg, rgba(155, 120, 255, 0.7), transparent); }
+.title-deco .dgem { width: 8px; height: 8px; border-radius: 1px; background: rgba(155, 120, 255, 0.9); transform: rotate(45deg); box-shadow: 0 0 14px 2px rgba(155, 120, 255, 0.6); animation: gemPulse 3s ease-in-out infinite; }
+@keyframes gemPulse {
+  0%, 100% { transform: rotate(45deg) scale(1); opacity: 0.8; }
+  50% { transform: rotate(45deg) scale(1.3); opacity: 1; box-shadow: 0 0 20px 4px rgba(155, 120, 255, 0.8); }
+}
+
+/* ============ 7. Plotly 圖表容器 ============ */
+#emotion-pie-chart {
+  width: 100%;
+  height: 550px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(8, 12, 24, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6), 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ============ 8. 導覽列：回到大廳按鈕 ============ */
+.nav-icon-frame {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  z-index: 200;
+  cursor: pointer;
+}
+.nav-icon-frame::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+.nav-icon-frame:hover {
+  transform: scale(1.08) translateY(-2px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(123, 220, 255, 0.5);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(123, 220, 255, 0.25);
+}
+.nav-icon-frame .tt {
+  position: absolute;
+  bottom: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 11, 18, 0.92);
+  border: 1px solid rgba(123, 220, 255, 0.25);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: rgba(200, 220, 255, 0.85);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  letter-spacing: 0.5px;
+}
+.nav-icon-frame:hover .tt { opacity: 1; }
+.home-png-icon-inner {
+  width: 28px;
+  height: 28px;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+  transition: filter 0.3s ease;
+}
+.nav-icon-frame:hover .home-png-icon-inner { filter: drop-shadow(0 0 12px rgba(123, 220, 255, 0.9)); }
+
+/* ============ 9. RWD 響應式 ============ */
+@media (max-width: 1024px) { .chart-card { max-width: 90%; padding: 40px 24px; } #emotion-pie-chart { height: 480px; } }
+@media (max-width: 768px) { .container { padding: 80px 16px 30px; } .nav-icon-frame { top: 16px; left: 16px; width: 42px; height: 42px; } .home-png-icon-inner { width: 24px; height: 24px; } .chart-title { font-size: 24px; letter-spacing: 2px; } .title-deco .dl, .title-deco .dr { width: 60px; } .chart-card { padding: 30px 16px; border-radius: 20px; } #emotion-pie-chart { height: 400px; } }
+@media (max-width: 480px) { #emotion-pie-chart { height: 320px; } }
+
+/* ============ 10. 捲軸美化 ============ */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(10, 11, 16, 0.8); }
+::-webkit-scrollbar-thumb { background: rgba(155, 120, 255, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(123, 220, 255, 0.5); }
+
+/* ============ 11. 圖表控制列與下拉選單 ============ */
+.controls-row {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 100;
+}
+.controls-row label {
+  color: rgba(210, 222, 255, 0.8);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.glass-select {
+  background: rgba(10, 15, 30, 0.6);
+  border: 1px solid rgba(123, 220, 255, 0.4);
+  color: #fff;
+  padding: 8px 36px 8px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  outline: none;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(123,220,255,0.8)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: all 0.3s ease;
+}
+.glass-select:hover {
+  border-color: rgba(123, 220, 255, 0.8);
+  box-shadow: 0 0 15px rgba(123, 220, 255, 0.2);
+}
+.glass-select option {
+  background: #121626;
+  color: #fff;
+  padding: 10px;
+}
+
+/* ============ 12. 懸停顯示夢境細節框 ============ */
+.hover-detail-box {
+  margin-top: 24px;
+  background: rgba(8, 12, 24, 0.5);
+  border: 1px solid rgba(155, 120, 255, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(15px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(155, 120, 255, 0.05);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.hover-detail-box.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.hover-emo-title {
+  color: rgba(123, 220, 255, 0.9);
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hover-emo-title::before { content: "✦"; color: rgba(155, 120, 255, 0.8); }
+.dream-list { padding: 0; margin: 0; }
+.dream-list-item { margin-bottom: 12px; font-size: 14px; color: rgba(230, 240, 255, 0.85); list-style: none; display: flex; gap: 12px; line-height: 1.5; }
+.dream-list-item .date-badge { color: rgba(155, 120, 255, 0.9); font-family: monospace; background: rgba(155, 120, 255, 0.1); padding: 2px 8px; border-radius: 6px; flex-shrink: 0; height: fit-content; }
+
+/* ============ 13. 動畫關鍵影格補充 ============ */
+@keyframes sigilRot {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.meteor {
+  position: absolute;
+  height: 0.5px;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: right center;
+  background: linear-gradient(to left, rgba(255,255,255,0) 0%, rgba(180,210,255,.25) 15%, rgba(210,230,255,.7) 45%, rgba(255,255,255,.98) 80%, rgba(255,255,255,1) 100%);
+  box-shadow: 0 0 6px 2px rgba(255,255,255,0.5), 0 0 16px 4px rgba(180,220,255,0.25);
+  animation: mFly var(--dur, 2.8s) cubic-bezier(.22,.8,.6,1) forwards;
+}
+@keyframes mFly {
+  0%   { opacity: 0; transform: rotate(var(--ang)) translateX(0); }
+  6%   { opacity: 1; }
+  82%  { opacity: .75; }
+  100% { opacity: 0; transform: rotate(var(--ang)) translateX(var(--travel)); }
+}

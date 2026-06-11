@@ -18,7 +18,7 @@
             <div class="action-grid">
                 <a href="/weaver" class="action-button" style="text-decoration: none; display: inline-block; text-align: center;">開啟今日夢境紀錄</a>
                 <button class="action-button" data-target="subconscious">進入心靈數據室</button>
-                <button class="action-button" data-target="capsule">時空膠囊保險箱</button>
+                <a href="/capsule" class="action-button" style="text-decoration: none; display: inline-block; text-align: center;">所有夢境的情緒圖表統整</a>
                 <button id="inspireBtn" class="action-button-secondary">隨機靈感投遞</button>
             </div>
             <div id="inspirationOutput" class="inspiration-box">按下「隨機靈感投遞」來獲取夢境關鍵詞組合。</div>
@@ -132,7 +132,22 @@
 
     <script>
         const API_BASE = '/api';
-        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        let currentUser = null;
+
+        async function refreshSession() {
+            try {
+                const response = await fetch(`${API_BASE}/session`, { method: 'GET' });
+                const result = await response.json();
+                currentUser = result.success ? result.user : null;
+            } catch (e) {
+                currentUser = null;
+            }
+
+            if (!currentUser) {
+                localStorage.removeItem('currentUser');
+            }
+            updateTopButton();
+        }
         
         const dreamKeywords = [
             '月光軌跡',
@@ -362,29 +377,42 @@
             if (currentUser) {
                 button.textContent = '登出';
                 button.onclick = handleLogout;
-                nameLabel.textContent = currentUser.username ? `Hello, ${currentUser.username}` : '';
+                nameLabel.textContent = currentUser.username ? `Hello, ${currentUser.username}` : '訪客模式';
             } else {
                 button.textContent = '登入';
                 button.onclick = () => {
                     window.location.hash = 'login';
                 };
-                nameLabel.textContent = '';
+                nameLabel.textContent = '訪客模式';
             }
         }
 
-        function handleLogout() {
+        function setupSubconsciousButton() {
+            const button = document.querySelector('button[data-target="subconscious"]');
+            if (!button) return;
+            button.addEventListener('click', () => {
+                window.location.href = '/data';
+            });
+        }
+
+        async function handleLogout() {
             const confirmed = confirm('確實要登出嗎？');
-            if (confirmed) {
-                currentUser = null;
-                localStorage.removeItem('currentUser');
-                updateTopButton();
-                showPage('hall');
-                window.location.hash = '';
+            if (!confirmed) return;
+
+            try {
+                await fetch(`${API_BASE}/logout`, { method: 'POST' });
+            } catch (e) {
+                // ignore network errors; still clear client state
             }
+
+            localStorage.removeItem('currentUser');
+            currentUser = null;
+            updateTopButton();
+            window.location.href = '/';
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateTopButton();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await refreshSession();
             routeFromHash();
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
             document.getElementById('signupForm').addEventListener('submit', handleSignup);
@@ -393,6 +421,7 @@
             document.getElementById('resetPasswordForm').addEventListener('submit', handleResetPassword);
             setupPasswordMatchValidation();
             setupForgotPasswordValidation();
+            setupSubconsciousButton();
         });
 
         window.addEventListener('hashchange', routeFromHash);

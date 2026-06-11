@@ -12,1780 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- 頁面標題（繁體中文） -->
     <title>夢境編織室</title>
-
-    <!-- 內嵌簡單 CSS，負責置中、遮罩與基礎版面佈局 -->
-    <style>
-      /* ============ 游標可見性修正 ============ */
-      /* 確保滑鼠游標在整個頁面上可見（修正「游標只在按鈕懸停時出現」的 bug） */
-      body {
-        cursor: auto !important;
-      }
-
-      /* 全頁背景與文字基礎：深色宇宙漸層，營造夢境氛圍 */
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-        font-family:
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          Roboto,
-          "Noto Sans TC",
-          "Helvetica Neue",
-          Arial,
-          sans-serif;
-        background: radial-gradient(
-          circle at top,
-          #1b2540 0%,
-          #0a0b10 35%,
-          #090a0f 55%,
-          #120e24 100%
-        );
-        color: #edf2ff;
-        line-height: 1.6;
-        letter-spacing: 0.2px;
-        overflow-x: hidden;
-        cursor: none;
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background:
-          radial-gradient(
-            circle at 20% 20%,
-            rgba(125, 91, 255, 0.08),
-            transparent 25%
-          ),
-          radial-gradient(
-            circle at 80% 10%,
-            rgba(0, 245, 255, 0.08),
-            transparent 20%
-          ),
-          radial-gradient(
-            circle at 50% 80%,
-            rgba(255, 255, 255, 0.04),
-            transparent 30%
-          );
-        pointer-events: none;
-        z-index: 0;
-      }
-
-      /* ============ 星點背景層（新增：星空感） ============ */
-      /* 固定在背景，產生隨機閃爍的白色星點 */
-      #star-layer {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .st {
-        position: absolute;
-        border-radius: 50%;
-        background: #fff;
-        animation: stTwk linear infinite;
-      }
-      @keyframes stTwk {
-        0%, 100% { opacity: 0.07; }
-        50% { opacity: 0.48; }
-      }
-      @keyframes stTwk {
-      0%, 100% { opacity: 0.07; }
-      50% { opacity: var(--peak, 0.5); }
-      }
-      .st.major { box-shadow: 0 0 4px 1px rgba(255,255,255,0.6), 0 0 10px 2px rgba(180,210,255,0.3); }
-      @keyframes majorTwk {
-      0%, 100% { opacity: .35; transform: scale(1); }
-      50% { opacity: .9; transform: scale(1.3); }
-      }
-
-      /* 背景環境光球（Aurora Effect）：三個模糊光團，放在最底層，營造流動氛圍 */
-      .ambient-orb {
-        position: fixed;
-        border-radius: 50%;
-        pointer-events: none;
-        filter: blur(120px);
-        opacity: 0.28;
-        z-index: -2;
-        mix-blend-mode: screen;
-        transform: translate3d(0, 0, 0);
-        will-change: transform, opacity;
-        animation: ambientDrift 20s ease-in-out infinite alternate;
-      }
-
-      .ambient-orb.one {
-        width: 320px;
-        height: 320px;
-        left: 6%;
-        top: 10%;
-        background: radial-gradient(
-          circle,
-          rgba(102, 84, 255, 0.9),
-          rgba(74, 48, 180, 0.1) 65%,
-          transparent 70%
-        );
-        animation-duration: 24s;
-      }
-
-      .ambient-orb.two {
-        width: 380px;
-        height: 380px;
-        right: 4%;
-        top: 8%;
-        background: radial-gradient(
-          circle,
-          rgba(0, 230, 255, 0.8),
-          rgba(0, 112, 170, 0.05) 60%,
-          transparent 72%
-        );
-        animation-duration: 26s;
-        animation-delay: -6s;
-      }
-
-      .ambient-orb.three {
-        width: 280px;
-        height: 280px;
-        left: 35%;
-        bottom: 4%;
-        background: radial-gradient(
-          circle,
-          rgba(174, 68, 255, 0.75),
-          rgba(91, 35, 150, 0.05) 60%,
-          transparent 72%
-        );
-        animation-duration: 22s;
-        animation-delay: -10s;
-      }
-
-      @keyframes ambientDrift {
-        0% {
-          transform: translate3d(0, 0, 0) scale(1);
-        }
-        25% {
-          transform: translate3d(18px, -22px, 0) scale(1.08);
-        }
-        50% {
-          transform: translate3d(-14px, 14px, 0) scale(0.95);
-        }
-        75% {
-          transform: translate3d(12px, 20px, 0) scale(1.04);
-        }
-        100% {
-          transform: translate3d(-8px, -10px, 0) scale(1.12);
-        }
-      }
-
-      /* 主容器：使用 flex 置中所有內容 */
-      .container {
-        min-height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 28px 18px 48px;
-        box-sizing: border-box;
-        position: relative;
-        z-index: 1;
-      }
-
-      /* 內容卡片（置中顯示輸入欄位）：玻璃擬態風格 */
-      .card {
-        width: 100%;
-        max-width: 860px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        box-shadow:
-          0 18px 40px rgba(5, 8, 18, 0.45),
-          inset 0 1px 0 rgba(255, 255, 255, 0.03);
-        border-radius: 18px;
-        padding: 28px;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-      }
-
-      /* 標題樣式 */
-      h1.main-title {
-        margin: 0 0 8px 0;
-        font-size: 30px;
-        letter-spacing: 2px;
-        color: #f4f6ff;
-        text-shadow: 0 0 50px rgba(155, 120, 255, 0.35), 0 0 100px rgba(100, 180, 255, 0.15);
-      }
-
-      /* ============ 新增：標題裝飾線（引自 preview） ============ */
-      /* 標題下方的寶石裝飾線，左右各一條漸層細線中間夾菱形 */
-      .title-deco {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin: 0 0 14px;
-      }
-      .title-deco .dl {
-        height: 1px;
-        width: 70px;
-        background: linear-gradient(90deg, transparent, rgba(155, 120, 255, 0.5));
-      }
-      .title-deco .dr {
-        height: 1px;
-        width: 70px;
-        background: linear-gradient(90deg, rgba(155, 120, 255, 0.5), transparent);
-      }
-      .title-deco .dgem {
-        width: 7px;
-        height: 7px;
-        border-radius: 1px;
-        background: rgba(155, 120, 255, 0.75);
-        transform: rotate(45deg);
-      }
-
-      /* 區塊說明文字 */
-      p.lead {
-        margin: 0 0 18px 0;
-        color: rgba(210, 222, 255, 0.55);
-        opacity: 0.92;
-        font-size: 14px;
-        letter-spacing: 0.5px;
-      }
-
-      /* 
-      大型 textarea 容器樣式（底層容器保留所有邊框/背景/陰影）
-      而 textarea 本身變成透明（詳見下方 textarea.big 規則）
-    */
-      .dream-textarea-wrapper {
-        position: relative;
-        width: 100%;
-        min-height: 180px;
-        padding: 12px;
-        font-size: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        box-sizing: border-box;
-        margin-bottom: 14px;
-        background: rgba(255, 255, 255, 0.038);
-        color: #eff4ff;
-        box-shadow: 0 8px 18px rgba(7, 10, 20, 0.35);
-        transition: all 0.3s ease;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        overflow: hidden;
-      }
-
-      /* ============ 新增：textarea 頂部掃光線（引自 preview）  ============ */
-      /* 固定在 wrapper 頂部，模擬金屬光澤的 1px 光線 */
-      .ta-top-light {
-        position: absolute;
-        top: 0;
-        left: 18px;
-        right: 18px;
-        height: 1px;
-        z-index: 2;
-        pointer-events: none;
-        background: linear-gradient(90deg, transparent, rgba(155, 120, 255, 0.4), rgba(123, 220, 255, 0.25), transparent);
-        border-radius: 1px;
-      }
-
-      /* ============ 新增：textarea 掃光動畫層（引自 preview） ============ */
-      /* 在 textarea 背景上緩慢掃過的半透明光帶，增加科幻感 */
-      .ta-sweep {
-        position: absolute;
-        top: 0;
-        left: -120%;
-        width: 60%;
-        height: 100%;
-        pointer-events: none;
-        background: linear-gradient(90deg, transparent, rgba(123, 220, 255, 0.04), transparent);
-        animation: taSweep 5s ease-in-out infinite;
-        z-index: 1;
-        border-radius: inherit;
-      }
-      @keyframes taSweep {
-        0% { left: -60%; }
-        100% { left: 120%; }
-      }
-
-      /* 
-      Wrapper 懸停/焦點狀態：當 textarea 內焦點時，外層容器也會發光
-      這是通過 CSS :has() 選擇器實現，但為了相容性也在 JS 中同步
-    */
-      .dream-textarea-wrapper:has(textarea:focus) {
-        border-color: rgba(150, 190, 255, 0.8);
-        box-shadow:
-          0 0 0 2px rgba(132, 167, 255, 0.18),
-          0 0 24px rgba(145, 186, 255, 0.25);
-        transform: translateY(-1px);
-      }
-
-      /* 大型 textarea 樣式：透明化 */
-      textarea.big {
-        width: 100%;
-        min-height: 180px;
-        resize: vertical;
-        padding: 6px 50px 34px 6px;
-        font-size: 16px;
-        border: none !important;
-        border-radius: 0;
-        box-sizing: border-box;
-        margin-bottom: 0;
-        font-family: inherit;
-        background: transparent !important;
-        color: #eff4ff;
-        box-shadow: none !important;
-        transition: all 0.3s ease;
-        outline: none;
-        position: relative;
-        z-index: 2;
-      }
-
-      /* Textarea 焦點狀態：移除預設焦點外框 */
-      textarea.big:focus {
-        outline: none;
-        box-shadow: none !important;
-      }
-
-      /* ============ 新增：欄位標籤列（引自 preview .slabel） ============ */
-      /* 每個 textarea 上方的圖示 + 文字 + 右側漸層線的組合標籤 */
-      .slabel {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-        text-align: left;
-      }
-      .slabel-icon {
-        width: 22px;
-        height: 22px;
-        border-radius: 7px;
-        background: rgba(155, 120, 255, 0.13);
-        border: 1px solid rgba(155, 120, 255, 0.22);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .slabel-text {
-        font-size: 16px;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: rgba(180, 200, 255, 0.48);
-      }
-      .slabel-line {
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent);
-      }
-
-      /* Checkbox 與其 label 的置中排列 */
-      .checkbox-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-bottom: 8px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        transition: all 0.3s ease;
-      }
-
-      .checkbox-row:hover {
-        border-color: rgba(150, 190, 255, 0.55);
-        box-shadow: 0 0 18px rgba(132, 167, 255, 0.18);
-      }
-
-      input[type="checkbox"] {
-        accent-color: #7bdcff;
-        width: 16px;
-        height: 16px;
-        transition: all 0.3s ease;
-      }
-
-      input[type="checkbox"]:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 4px rgba(123, 220, 255, 0.18);
-        transform: scale(1.05);
-      }
-
-      /* 送出按鈕樣式 */
-      button.submit-btn {
-        margin-top: 10px;
-        padding: 14px 40px;
-        font-size: 16px;
-        font-weight: 500;
-        letter-spacing: 1.5px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 999px;
-        background: linear-gradient(
-          135deg,
-          rgba(130, 86, 255, 0.95),
-          rgba(0, 221, 255, 0.9)
-        );
-        color: #ffffff;
-        cursor: pointer;
-        box-shadow: 0 10px 24px rgba(63, 118, 255, 0.25);
-        transition:
-          transform 0.2s ease,
-          box-shadow 0.25s ease;
-        position: relative;
-        overflow: hidden;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      /* ============ 新增：送出按鈕掃光（引自 preview .sbtn-sweep） ============ */
-      button.submit-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 60%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-        animation: btnSweep 3s ease-in-out infinite;
-      }
-      @keyframes btnSweep {
-        0% { left: -60%; }
-        100% { left: 120%; }
-      }
-
-      button.submit-btn:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 14px 28px rgba(96, 145, 255, 0.45);
-      }
-
-      /* ============ 新增：送出按鈕下方 hint 標籤列（引自 preview .hint-row） ============ */
-      /* 顯示三個功能說明小膠囊：AI 分析 / 圖像生成 / 象徵解碼 */
-      .hint-row {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        margin-top: 14px;
-        flex-wrap: wrap;
-      }
-      .hint-tag {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 11px;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        color: rgba(180, 200, 255, 0.35);
-      }
-      .hint-dot {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: rgba(123, 220, 255, 0.55);
-      }
-
-      /* 
-      Disabled 狀態的 textarea 外觀：當 checkbox "不輸入現實情況" 被勾選時
-      外層 wrapper 會顯示 disabled 狀態視覺反饋
-    */
-      textarea.big:disabled {
-        background: transparent !important;
-        color: #aab6d8;
-        border-style: none;
-        box-shadow: none !important;
-      }
-
-      /* Wrapper 被 disabled 時的外觀 */
-      .dream-textarea-wrapper:has(textarea:disabled) {
-        background: rgba(255, 255, 255, 0.03);
-        border-style: dashed;
-        opacity: 0.6;
-      }
-
-      /* 進入動畫遮罩（固定覆蓋整個視窗） */
-      #intro-overlay {
-        position: fixed;
-        inset: 0; /* top:0; right:0; bottom:0; left:0 */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(
-          circle at center,
-          rgba(20, 13, 40, 0.88),
-          rgba(4, 6, 14, 0.96)
-        );
-        color: #fff;
-        z-index: 9999; /* 確保在最上層 */
-        opacity: 1;
-        visibility: visible;
-        transition:
-          opacity 500ms ease,
-          visibility 500ms ease;
-      }
-
-      /* 進入動畫隱藏時的樣式（保持柔和的淡出） */
-      #intro-overlay.hidden {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-      }
-
-      /* 進入動畫內的大字文本：夢境感字體與微光效果 */
-      #intro-overlay .intro-text {
-        font-family:
-          "Palatino Linotype", "Book Antiqua", Georgia, "Noto Serif TC", serif;
-        font-size: 34px;
-        line-height: 1.25;
-        max-width: 92%;
-        text-align: center;
-        padding: 20px;
-        letter-spacing: 4px; /* 讓字體更有夢境感與層次感 */
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.6); /* 柔和白光 */
-        color: #f7f4ff;
-        text-transform: none;
-      }
-
-      /* 薄霧散開動畫：點擊後文字像霧氣慢慢消散 */
-      #intro-overlay.dissolving .intro-text {
-        animation: mistDispersing 1.35s ease forwards;
-        transform-origin: center;
-      }
-
-      /* 關鍵影格：放大、模糊、漸淡，模擬薄霧逐漸散開 */
-      @keyframes mistDispersing {
-        0% {
-          opacity: 1;
-          filter: blur(0px);
-          transform: scale(1);
-        }
-        35% {
-          opacity: 0.9;
-          filter: blur(2px);
-          transform: scale(1.05);
-        }
-        70% {
-          opacity: 0.18;
-          filter: blur(10px);
-          transform: scale(1.12);
-        }
-        100% {
-          opacity: 0;
-          filter: blur(15px);
-          transform: scale(1.18);
-        }
-      }
-
-      /* 小螢幕微調 */
-      @media (max-width: 480px) {
-        #intro-overlay .intro-text {
-          font-size: 22px;
-        }
-        textarea.big {
-          min-height: 140px;
-        }
-      }
-
-      /* 結果卡片的液態漸層動畫樣式 */
-      .result-card {
-        width: 100%;
-        max-width: 820px;
-        border-radius: 16px;
-        padding: 18px;
-        color: white;
-        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
-        overflow: hidden;
-        position: relative;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        animation: liquidShift 12s linear infinite;
-        background-size: 300% 300%;
-      }
-
-      .result-card .result-inner {
-        background: rgba(8, 12, 24, 0.18);
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-      }
-
-      /* 夢境結果容器：雙欄佈局，左側為 Polaroid 影像，右側為潛意識分析文字 */
-      .dream-result-container {
-        display: grid;
-        grid-template-columns: minmax(260px, 360px) 1fr;
-        gap: 24px;
-        align-items: start;
-        width: 100%;
-        max-width: 980px;
-        margin: 0 auto;
-      }
-
-      .polaroid-frame {
-        position: relative;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 22px;
-        padding: 18px 18px 26px;
-        box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
-        transform: rotate(-3deg);
-        transition:
-          transform 0.4s ease,
-          box-shadow 0.4s ease;
-        overflow: hidden;
-      }
-
-      .polaroid-frame:hover {
-        transform: rotate(0deg) scale(1.03);
-        box-shadow: 0 34px 72px rgba(0, 0, 0, 0.38);
-      }
-
-      .polaroid-frame::after {
-        content: "記憶碎片";
-        position: absolute;
-        bottom: 12px;
-        left: 50%;
-        transform: translateX(-50%);
-        color: rgba(242, 247, 255, 0.82);
-        font-size: 0.88rem;
-        letter-spacing: 0.15em;
-        opacity: 0.92;
-      }
-
-      .polaroid-frame img {
-        width: 100%;
-        height: 260px; /* 關鍵：將 auto 改為固定高度，強制與你的 min-height 統一 */
-        display: block;
-        border-radius: 16px;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
-        object-fit: cover; /* 固定高度後，這行裁切魔法才會真正生效 */
-        background: rgba(20, 24, 38, 0.4);
-      }
-
-      .analysis-panel {
-        background: rgba(8, 12, 24, 0.22);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 22px;
-        padding: 28px;
-        box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-      }
-
-      .analysis-panel h2 {
-        margin: 0 0 12px 0;
-        font-size: 1.95rem;
-        letter-spacing: 0.08em;
-        color: #eff8ff;
-        text-shadow: 0 0 18px rgba(123, 206, 255, 0.35);
-      }
-
-      .analysis-panel .emotion-tag {
-        display: inline-block;
-        margin-bottom: 20px;
-        padding: 10px 16px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        box-shadow: inset 0 0 14px rgba(255, 255, 255, 0.08);
-        font-size: 0.95rem;
-        color: #dce4ff;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .analysis-panel .analysis-text {
-        margin: 0;
-        color: #e7f0ff;
-        line-height: 1.8;
-        letter-spacing: 0.05em;
-        white-space: pre-wrap;
-        font-size: 1rem;
-      }
-
-      .analysis-panel .analysis-text strong,
-      .analysis-panel .analysis-text em {
-        color: #ffffff;
-      }
-
-      @media (max-width: 840px) {
-        .dream-result-container {
-          grid-template-columns: 1fr;
-        }
-        .polaroid-frame {
-          transform: rotate(-1deg);
-        }
-      }
-
-      /* 自訂游標與粒子 canvas 基礎樣式 */
-      #particle-canvas {
-        position: fixed;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0;
-        pointer-events: none;
-        opacity: 0.9;
-      }
-
-      #cursor-moon {
-        position: fixed;
-        width: 26px;
-        height: 26px;
-        z-index: 2;
-        pointer-events: none;
-        transform: translate(-50%, -50%);
-        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.65));
-        opacity: 0.95;
-      }
-
-      #cursor-moon svg {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-
-      /* keyframes：背景位置緩慢變化，營造液態流動感 */
-      @keyframes liquidShift {
-        0% {
-          background-position: 0% 50%;
-        }
-        50% {
-          background-position: 100% 50%;
-        }
-        100% {
-          background-position: 0% 50%;
-        }
-      }
-
-      /* ============ 設定面板（Settings Panel）相關樣式 ============ */
-
-      /* 已移至 .settings-icon-container 類別（PNG 圖標版本） */
-
-      /* ============ 導覽列圖示容器（新版：同時套用於首頁與設定圖示） ============ */
-      /* nav-icon-frame: 供左上 home 與右上 settings 共用的框架樣式 */
-      /* 原 .settings-icon-container 保留作為右上圖示的 ID-based 錨點，樣式統一來自此類別 */
-      .nav-icon-frame {
-        width: 48px;
-        height: 48px;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.11);
-        border-radius: 13px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        text-decoration: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-      }
-
-      /* 框框頂部 1px 高光線（引自 preview .icon-frame::before） */
-      .nav-icon-frame::before {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: 20%;
-        right: 20%;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-        border-radius: 1px;
-      }
-
-      /* Tooltip：hover 時出現的提示文字 */
-      .nav-icon-frame .tt {
-        position: absolute;
-        bottom: -34px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(10, 11, 18, 0.92);
-        border: 1px solid rgba(123, 220, 255, 0.25);
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 11px;
-        color: rgba(200, 220, 255, 0.85);
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s;
-        letter-spacing: 0.5px;
-        backdrop-filter: blur(8px);
-      }
-      .nav-icon-frame:hover .tt {
-        opacity: 1;
-      }
-
-      /* 圖示懸停基礎效果（共用） */
-      .nav-icon-frame:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(123, 220, 255, 0.45);
-        box-shadow: 0 0 18px rgba(123, 220, 255, 0.2);
-      }
-
-      /* ============ 左上 Home 圖示：懸停時平滑縮放（引自 preview，並加框） ============ */
-      /* hover 時以 scale 放大取代原本 home_png_icon 的無框樣式 */
-      .nav-icon-frame.home-frame:hover {
-        transform: scale(1.05);
-        border-color: rgba(200, 180, 255, 0.5);
-        box-shadow: 0 0 18px rgba(180, 160, 255, 0.2);
-      }
-
-      /* ============ 右上 Settings 圖示：懸停時旋轉（保留原動畫） ============ */
-      /* 原 .settings-icon-container:hover 的 rotate(20deg) 效果完整保留 */
-      .nav-icon-frame.settings-frame:hover {
-      transform: scale(1.05); /* 把原本的 rotate(20deg) scale(1.05) 改掉，只保留 scale */
-      border-color: rgba(200, 180, 255, 0.5);
-      box-shadow: 0 0 18px rgba(180, 160, 255, 0.2);
-      filter: none; /* 原本有 drop-shadow，一併移除 */
-    }
-
-      /* 自訂設定 PNG 圖標樣式：固定尺寸與混合模式以移除黑色背景 */
-      .settings-png-icon {
-        width: 30px;
-        height: 30px;
-        mix-blend-mode: screen;
-        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
-        transition: all 0.3s ease;
-      }
-
-      /* 回大廳 Home PNG 圖示樣式（放置於 nav-icon-frame 內） */
-      .home-png-icon-inner {
-        width: 28px;
-        height: 28px;
-        mix-blend-mode: screen;
-        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
-        transition: all 0.3s ease;
-      }
-
-      /* 左右定位：使用 fixed 定位將兩個圖示固定在螢幕角落 */
-      .nav-top-left {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 100;
-      }
-      .nav-top-right {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 100;
-      }
-
-      #settings-icon svg {
-        width: 28px;
-        height: 28px;
-      }
-
-      /* 設定面板模態背景：玻璃擬態層，點擊關閉 */
-      /* CRITICAL: display: none 以防止初始化時阻擋螢幕與動畫 */
-      #settings-modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-
-      /* 設定面板激活狀態：CRITICAL 確保 display: flex 而不是 opacity 變化 */
-      #settings-modal.active {
-        display: flex !important;
-        opacity: 1;
-        visibility: visible;
-      }
-
-      /* 設定面板卡片：玻璃擬態風格，帶有滑入動畫 */
-      #settings-modal .settings-panel {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 20px;
-        padding: 28px;
-        width: 90%;
-        max-width: 420px;
-        box-shadow:
-          0 25px 50px rgba(0, 0, 0, 0.5),
-          inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        animation: settingsSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        position: relative;
-      }
-
-      /* 設定面板滑入動畫 */
-      @keyframes settingsSlideIn {
-        from {
-          transform: translateY(-30px) scale(0.95);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0) scale(1);
-          opacity: 1;
-        }
-      }
-
-      /* 設定面板標題 */
-      #settings-modal .settings-panel h2 {
-        margin: 0 0 20px 0;
-        font-size: 22px;
-        color: #f4f6ff;
-        text-align: center;
-        letter-spacing: 1px;
-      }
-
-      /* 關閉按鈕 */
-      #settings-modal .settings-panel .close-btn {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        width: 32px;
-        height: 32px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 20px;
-        color: #dce4ff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.25s ease;
-      }
-
-      #settings-modal .settings-panel .close-btn:hover {
-        background: rgba(255, 255, 255, 0.12);
-        color: #f4f6ff;
-        transform: scale(1.1);
-      }
-
-      /* 設定選項行：每個開關與文字標籤 */
-      .settings-option {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px;
-        margin-bottom: 12px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        transition: all 0.3s ease;
-      }
-
-      /* 設定選項懸停效果 */
-      .settings-option:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(150, 190, 255, 0.4);
-        box-shadow: 0 0 12px rgba(132, 167, 255, 0.12);
-      }
-
-      /* 自訂開關樣式基礎 */
-      .toggle-switch {
-        position: relative;
-        width: 50px;
-        height: 28px;
-        flex-shrink: 0;
-      }
-
-      /* 隱藏原生 checkbox */
-      .toggle-switch input {
-        position: absolute;
-        opacity: 0;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-        z-index: 2;
-        margin: 0;
-      }
-
-      /* 開關滑塊 */
-      .toggle-switch .switch-slider {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 14px;
-        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        padding: 2px;
-      }
-
-      /* 開關滑塊內的圓形（未勾選狀態） */
-      .toggle-switch .switch-slider::after {
-        content: "";
-        position: absolute;
-        width: 24px;
-        height: 24px;
-        left: 2px;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 12px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      /* 開關勾選狀態：漸變背景 + 發光效果 */
-      .toggle-switch input:checked + .switch-slider {
-        background: linear-gradient(
-          135deg,
-          rgba(123, 220, 255, 0.8),
-          rgba(0, 200, 255, 0.8)
-        );
-        border-color: rgba(123, 220, 255, 0.9);
-        box-shadow: 0 0 16px rgba(123, 220, 255, 0.4);
-      }
-
-      /* 開關勾選狀態：圓形向右移動 */
-      .toggle-switch input:checked + .switch-slider::after {
-        left: 24px;
-        background: #ffffff;
-        box-shadow: 0 2px 8px rgba(0, 150, 200, 0.4);
-      }
-
-      /* 設定選項標籤文字 */
-      .settings-option label {
-        cursor: pointer;
-        flex: 1;
-        color: #dce4ff;
-        font-size: 15px;
-        transition: color 0.3s ease;
-        margin: 0;
-      }
-
-      /* 設定選項懸停時標籤變亮 */
-      .settings-option:hover label {
-        color: #f4f6ff;
-      }
-
-      /* ============ 語音輸入（Voice Input）相關樣式 ============ */
-
-      /* 夢境 Textarea 包裝容器：提供相對定位用於絕對定位的麥克風圖示 */
-      .dream-textarea-wrapper {
-        position: relative;
-        width: 100%;
-      }
-
-      /* 隱藏的背景音訊 */
-      #bg-music {
-        display: none;
-      }
-
-      /* 
-      語音輸入麥克風按鈕樣式（通用於 #mic-btn-dream 與 #mic-btn-reality）
-      絕對定位在各自 wrapper 角落，保持適當間距
-    */
-      .mic-btn {
-        position: absolute;
-        bottom: 15px;
-        right: 15px;
-        width: 40px;
-        height: 40px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        transition: all 0.3s ease;
-        filter: drop-shadow(0 0 6px rgba(255, 200, 255, 0));
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-      }
-
-      /* 麥克風按鈕可見狀態 */
-      .mic-btn.visible {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-      }
-
-      /* 麥克風按鈕懸停效果 */
-      .mic-btn:hover {
-        background: rgba(255, 255, 255, 0.15);
-        border-color: rgba(123, 220, 255, 0.8);
-        filter: drop-shadow(0 0 12px rgba(123, 220, 255, 0.6));
-        transform: scale(1.08);
-      }
-
-      /* 麥克風監聽狀態：脈衝動畫 + 青藍發光 */
-      .mic-btn.listening {
-        animation: micPulse 1.2s ease-in-out infinite;
-        background: rgba(123, 220, 255, 0.25);
-        border-color: rgba(123, 220, 255, 0.9);
-        filter: drop-shadow(0 0 16px rgba(123, 220, 255, 0.8));
-      }
-
-      /* 麥克風脈衝動畫 */
-      @keyframes micPulse {
-        0%,
-        100% {
-          box-shadow: 0 0 0 0 rgba(123, 220, 255, 0.7);
-          transform: scale(1);
-        }
-        50% {
-          box-shadow: 0 0 0 8px rgba(123, 220, 255, 0);
-          transform: scale(1.02);
-        }
-      }
-
-      .mic-btn svg {
-        width: 22px;
-        height: 22px;
-      }
-
-      /* 舊的 #voice-input-btn 樣式已被 .mic-btn 取代（向後相容） */
-      #voice-input-btn {
-        /* 此 ID 不再使用，保留以防舊版本參考 */
-      }
-
-      /* 小螢幕適配 */
-      @media (max-width: 480px) {
-        .nav-icon-frame {
-          width: 42px;
-          height: 42px;
-        }
-        .settings-png-icon,
-        .home-png-icon-inner {
-          width: 26px;
-          height: 26px;
-        }
-        #settings-modal .settings-panel {
-          width: 85%;
-          padding: 20px;
-        }
-        .dream-textarea-wrapper {
-          min-height: 140px;
-        }
-      }
-
-      /* ============ Lightbox (Image Enlargement) 樣式 ============ */
-
-      /* Lightbox 容器：固定位置全螢幕層 */
-      #image-lightbox {
-        position: fixed;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        z-index: 2000;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        padding: 20px;
-        box-sizing: border-box;
-      }
-
-      /* Lightbox 激活狀態 */
-      #image-lightbox.active {
-        display: flex;
-        opacity: 1;
-        visibility: visible;
-      }
-
-      /* Lightbox 內部圖像：最大化而不超出螢幕 */
-      #image-lightbox img {
-        max-width: 90vw;
-        max-height: 90vh;
-        object-fit: contain;
-        border-radius: 16px;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-        animation: lightboxZoomIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        cursor: pointer;
-      }
-
-      /* Lightbox 圖像縮放進入動畫 */
-      @keyframes lightboxZoomIn {
-        from {
-          transform: scale(0.85) translateY(20px);
-          opacity: 0;
-        }
-        to {
-          transform: scale(1) translateY(0);
-          opacity: 1;
-        }
-      }
-
-      /* Polaroid 圖像標記為可點擊 */
-      .polaroid-frame img {
-        cursor: zoom-in;
-        transition:
-          transform 0.3s ease,
-          filter 0.3s ease;
-      }
-
-      /* Polaroid 圖像懸停效果：提示可點擊性 */
-      .polaroid-frame img:hover {
-        filter: brightness(1.1);
-      }
-      .polaroid-frame img {
-        cursor: zoom-in !important;
-      }
-      /* ============ 藝廊工藝級拍立得卡片重構 ============ */
-
-      .polaroid-frame {
-        position: relative;
-        /* 拋棄廉價純透明，改用絲滑的霧面黑曜石漸層，模擬高磅數實體相紙 */
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.02) 100%
-        );
-        /* 精細發光邊框 */
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 4px !important; /* ➔ 砍掉 22px 玩具感，回歸實體硬紙板線條 */
-        padding: 12px 12px 38px !important; /* 精細調整物理留白比例 */
-
-        /* 頂級多層次環境散射陰影 + 頂部 1px 物理高光 (inset) */
-        box-shadow:
-          0 4px 6px rgba(0, 0, 0, 0.2),
-          0 15px 35px rgba(0, 0, 0, 0.3),
-          0 30px 60px rgba(0, 0, 0, 0.4),
-          inset 0 1px 0px rgba(255, 255, 255, 0.15);
-
-        transform: rotate(-2.5deg);
-        /* 換上極度平滑的緩動貝氏曲線 */
-        transition:
-          transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-          box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        overflow: hidden;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-      }
-
-      /* 懸停狀態：優雅浮起並散發深層環境光 */
-      .polaroid-frame:hover {
-        transform: rotate(0deg) translateY(-6px) scale(1.015);
-        border-color: rgba(123, 220, 255, 0.4);
-        box-shadow:
-          0 8px 16px rgba(0, 0, 0, 0.25),
-          0 30px 60px rgba(0, 0, 0, 0.35),
-          0 50px 100px rgba(0, 0, 0, 0.5),
-          0 0 40px rgba(123, 220, 255, 0.12); /* 後方擴散的夢境微光 */
-      }
-
-      /* 照片本體：製造嵌入紙框的物理立體凹陷感 */
-      .polaroid-frame img {
-        width: 100%;
-        height: 260px;
-        display: block;
-        border-radius: 2px !important; /* 同步改為硬挺圓角 */
-        object-fit: cover;
-        /* 創造邊緣下陷陰影線，模擬照片嵌進卡紙的縫隙 */
-        outline: 1px solid rgba(0, 0, 0, 0.35);
-        box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5) !important;
-      }
-
-      /* 修正前置特效層 A（暗角與漏光）：同步縮小圓角防止邊緣露餡 */
-      .polaroid-frame::before {
-        content: "";
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        width: calc(100% - 24px);
-        height: 260px;
-        border-radius: 2px;
-        z-index: 2;
-        pointer-events: none;
-        background:
-          radial-gradient(circle, transparent 55%, rgba(0, 0, 0, 0.45) 100%),
-          linear-gradient(
-            135deg,
-            rgba(255, 0, 128, 0.12),
-            rgba(0, 245, 255, 0.08) 50%,
-            transparent
-          );
-        mix-blend-mode: multiply;
-        opacity: 0.85;
-        transition: opacity 0.3s ease;
-      }
-
-      /* 修正後置特效層 B（膠片噪點顆粒）：同步縮小圓角 */
-      .polaroid-frame::after {
-        content: "";
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        width: calc(100% - 24px);
-        height: 260px;
-        border-radius: 2px;
-        z-index: 3;
-        pointer-events: none;
-        background-image:
-          repeating-linear-gradient(
-            45deg,
-            rgba(255, 255, 255, 0.02) 0px,
-            rgba(255, 255, 255, 0.02) 1px,
-            transparent 1px,
-            transparent 2px
-          ),
-          repeating-linear-gradient(
-            -45deg,
-            rgba(0, 0, 0, 0.04) 0px,
-            rgba(0, 0, 0, 0.04) 1px,
-            transparent 1px,
-            transparent 2px
-          );
-        background-size: 3px 3px;
-        mix-blend-mode: overlay;
-        opacity: 0.55;
-      }
-
-      /* 下方鋼印文字：改用硬派古典的打字機微標題字體 */
-      .polaroid-frame::after {
-        content: "M E M O R I E S   F R A G M E N T" !important;
-        font-family:
-          "Courier New", Courier, monospace, "Noto Sans TC" !important;
-        font-weight: 700 !important;
-        font-size: 10px !important;
-        color: rgba(255, 255, 255, 0.4) !important;
-        letter-spacing: 3px !important;
-        bottom: 11px !important;
-      }
-
-      /* 懸停互動優化 */
-      .polaroid-frame:hover::before {
-        opacity: 0.4;
-      }
-
-      /* ============ 象徵標籤膠囊樣式 ============ */
-      .symbol-tags-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 16px;
-      }
-
-      .symbol-tag {
-        padding: 5px 14px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(123, 220, 255, 0.35);
-        color: #a8d8ff;
-        font-size: 0.82rem;
-        letter-spacing: 0.12em;
-        box-shadow: 0 0 10px rgba(123, 220, 255, 0.12);
-        transition: all 0.3s ease;
-      }
-
-      .symbol-tag:hover {
-        background: rgba(123, 220, 255, 0.12);
-        border-color: rgba(123, 220, 255, 0.7);
-        box-shadow: 0 0 16px rgba(123, 220, 255, 0.28);
-        color: #ddf2ff;
-      }
-
-      /* ============ IG Story 分享卡樣式 ============ */
-      #ig-story-card {
-        width: 1080px;
-        height: 1920px;
-        position: fixed;
-        left: -9999px;
-        top: 0;
-        border-radius: 28px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        font-family:
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          Roboto,
-          sans-serif;
-        background:
-          radial-gradient(
-            ellipse at 20% 10%,
-            rgba(100, 70, 200, 0.55) 0%,
-            transparent 55%
-          ),
-          radial-gradient(
-            ellipse at 80% 85%,
-            rgba(60, 40, 160, 0.5) 0%,
-            transparent 50%
-          ),
-          linear-gradient(160deg, #1a1050 0%, #0f1a45 45%, #16104a 100%);
-      }
-
-      /* HUD 角落框線 */
-      #ig-story-card .sc-hud {
-        position: absolute;
-        width: 52px;
-        height: 52px;
-        z-index: 25;
-        pointer-events: none;
-      }
-      #ig-story-card .sc-hud.tl {
-        top: 36px;
-        left: 36px;
-        border-top: 3px solid rgba(220, 175, 60, 0.75);
-        border-left: 3px solid rgba(220, 175, 60, 0.75);
-      }
-      #ig-story-card .sc-hud.tr {
-        top: 36px;
-        right: 36px;
-        border-top: 3px solid rgba(220, 175, 60, 0.75);
-        border-right: 3px solid rgba(220, 175, 60, 0.75);
-      }
-      #ig-story-card .sc-hud.bl {
-        bottom: 36px;
-        left: 36px;
-        border-bottom: 3px solid rgba(220, 175, 60, 0.75);
-        border-left: 3px solid rgba(220, 175, 60, 0.75);
-      }
-      #ig-story-card .sc-hud.br {
-        bottom: 36px;
-        right: 36px;
-        border-bottom: 3px solid rgba(220, 175, 60, 0.75);
-        border-right: 3px solid rgba(220, 175, 60, 0.75);
-      }
-
-      /* 圖片區域 */
-      #ig-story-card .sc-img-zone {
-        position: relative;
-        z-index: 10;
-        width: 100%;
-        height: 960px;
-        flex-shrink: 0;
-        overflow: hidden;
-      }
-
-      #ig-story-card .sc-img-zone img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-
-      /* 圖片底部漸層融合 */
-      #ig-story-card .sc-img-fade {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 420px;
-        background: linear-gradient(to bottom, transparent, #0f1a45);
-        z-index: 4;
-      }
-
-      /* 金色分隔線 */
-      #ig-story-card .sc-gold-line {
-        position: absolute;
-        bottom: 0;
-        left: 6%;
-        right: 6%;
-        height: 2px;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(220, 175, 60, 0.7),
-          rgba(255, 215, 100, 0.9),
-          rgba(220, 175, 60, 0.7),
-          transparent
-        );
-        z-index: 12;
-      }
-
-      /* 星座連線 SVG */
-      #ig-story-card .sc-constellation {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 13;
-        pointer-events: none;
-      }
-
-      /* 金色月亮 — 圖片右上 */
-      #ig-story-card .sc-moon {
-        position: absolute;
-        top: 40px;
-        right: 72px;
-        z-index: 15;
-        pointer-events: none;
-        width: 200px;
-        height: 200px;
-      }
-
-      /* ============ 資訊面板 ============ */
-      #ig-story-card .sc-info-panel {
-        position: relative;
-        z-index: 10;
-        flex: 1;
-        margin: 0 48px 48px;
-        border-radius: 44px;
-        background: rgba(80, 70, 180, 0.18);
-        border: 2px solid rgba(140, 120, 255, 0.25);
-        backdrop-filter: blur(28px);
-        -webkit-backdrop-filter: blur(28px);
-        box-shadow:
-          0 0 0 1px rgba(160, 140, 255, 0.12) inset,
-          0 4px 0 rgba(180, 160, 255, 0.08) inset,
-          0 32px 112px rgba(0, 0, 0, 0.35);
-        padding: 44px 56px 40px;
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        overflow: hidden;
-      }
-
-      /* 頂部金色光線 */
-      #ig-story-card .sc-info-panel::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 10%;
-        right: 10%;
-        height: 2px;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(180, 160, 255, 0.4),
-          rgba(220, 210, 255, 0.6),
-          rgba(180, 160, 255, 0.4),
-          transparent
-        );
-      }
-
-      /* 面板頂列：站名 + 右側(日期+六芒星) */
-      #ig-story-card .sc-panel-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 36px;
-      }
-
-      #ig-story-card .sc-site-name {
-        font-size: 48px;
-        letter-spacing: 0.25em;
-        color: rgba(220, 190, 100, 0.85);
-        text-transform: uppercase;
-        font-weight: 500;
-        line-height: 1;
-        align-self: center;
-      }
-
-      /* 右側：日期 + 六芒星垂直排列 */
-      #ig-story-card .sc-header-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 12px;
-      }
-
-      #ig-story-card .sc-sys-id {
-        font-size: 30px;
-        color: rgba(180, 200, 255, 0.45);
-        letter-spacing: 0.12em;
-        font-family: monospace;
-      }
-
-      /* 六芒星 SVG */
-      #ig-story-card .sc-hexagram {
-        width: 72px;
-        height: 72px;
-        display: block;
-      }
-
-      /* 情緒判定膠囊 — 縮小對齊第三張 */
-      #ig-story-card .sc-emotion-pill {
-        align-self: flex-start;
-        padding: 14px 40px;
-        border-radius: 14px;
-        background: rgba(220, 175, 60, 0.12);
-        border: 2px solid rgba(220, 175, 60, 0.6);
-        color: rgba(255, 230, 140, 0.95);
-        font-size: 34px;
-        letter-spacing: 0.08em;
-        box-shadow: 0 0 36px rgba(220, 175, 60, 0.2);
-        line-height: 1;
-        margin-bottom: 28px;
-      }
-
-      /* 象徵標籤列 — 縮小對齊第三張 */
-      #ig-story-card .sc-symbol-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 36px;
-      }
-
-      #ig-story-card .sc-sym-tag {
-        padding: 10px 28px;
-        border-radius: 10px;
-        background: rgba(140, 120, 255, 0.08);
-        border: 1.5px solid rgba(160, 140, 255, 0.4);
-        color: rgba(200, 190, 255, 0.9);
-        font-size: 28px;
-        letter-spacing: 0.1em;
-        box-shadow: 0 0 18px rgba(140, 120, 255, 0.1);
-      }
-
-      /* 分隔線 */
-      #ig-story-card .sc-divider {
-        height: 2px;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(220, 175, 60, 0.35),
-          rgba(140, 120, 255, 0.35),
-          transparent
-        );
-        margin-bottom: 36px;
-      }
-
-      /* SUBCONSCIOUS DECODE 標籤 */
-      #ig-story-card .sc-decode-label {
-        font-size: 26px;
-        letter-spacing: 0.28em;
-        color: rgba(220, 190, 100, 0.5);
-        text-transform: uppercase;
-        font-family: monospace;
-        margin-bottom: 32px;
-      }
-
-      /* 裝飾區 */
-      #ig-story-card .sc-decode-art {
-        flex: 1;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 32px;
-        overflow: hidden;
-      }
-
-      /* 大型裝飾眼睛 */
-      #ig-story-card .sc-decode-art svg.sc-eye-large {
-        width: 260px;
-        height: 260px;
-        opacity: 0.32;
-      }
-
-      /* 裝飾月暈 */
-      #ig-story-card .sc-decode-art .sc-art-halo {
-        position: absolute;
-        width: 480px;
-        height: 480px;
-        border-radius: 50%;
-        border: 2px solid rgba(220, 175, 60, 0.1);
-        pointer-events: none;
-      }
-      #ig-story-card .sc-decode-art .sc-art-halo.h2 {
-        width: 680px;
-        height: 680px;
-        border-color: rgba(140, 120, 255, 0.07);
-      }
-
-      /* 裝飾文字 */
-      #ig-story-card .sc-decode-art .sc-art-words {
-        position: absolute;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        pointer-events: none;
-      }
-
-      #ig-story-card .sc-decode-art .sc-art-word {
-        font-size: 28px;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        font-family: monospace;
-      }
-
-      /* 底部 footer — 字體統一、不超框 */
-      #ig-story-card .sc-card-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 8px;
-        border-top: 2px solid rgba(255, 255, 255, 0.08);
-        flex-shrink: 0;
-      }
-
-      /* DREAM · LOG 與 SUBCONSCIOUS OBS. 字體完全一致 */
-      #ig-story-card .sc-footer-date,
-      #ig-story-card .sc-footer-logo {
-        font-size: 26px;
-        letter-spacing: 0.15em;
-        font-family: monospace;
-        text-transform: uppercase;
-      }
-
-      #ig-story-card .sc-footer-date {
-        color: rgba(180, 200, 255, 0.4);
-      }
-
-      #ig-story-card .sc-footer-logo {
-        color: rgba(220, 190, 100, 0.5);
-      }
-      /* ============ 移至全域的初始化動畫（相容排版） ============ */
-@keyframes tdot { 
-  0%, 100% { opacity: .4; transform: scale(1); } 
-  50% { opacity: 1; transform: scale(1.5); } 
-}
-
-@keyframes tickerScroll {
-  0%, 18% { transform: translateY(0); } 
-  25%, 43% { transform: translateY(-15px); }
-  50%, 68% { transform: translateY(-30px); } 
-  75%, 93% { transform: translateY(-45px); } 
-  100% { transform: translateY(0); }
-}
-
-@keyframes marqueeRun { 
-  from { transform: translateX(0); } 
-  to { transform: translateX(-50%); } 
-}
-
-@keyframes sigilRot { 
-  from { transform: translate(-50%, -50%) rotate(0deg); } 
-  to { transform: translate(-50%, -50%) rotate(360deg); } 
-}
-.meteor {
-  position: absolute;
-  height: 0.5px; border-radius: 2px;
-  opacity: 0; pointer-events: none;
-  transform-origin: right center;
-  background: linear-gradient(to left,
-    rgba(255,255,255,0) 0%,
-    rgba(180,210,255,.25) 15%,
-    rgba(210,230,255,.7) 45%,
-    rgba(255,255,255,.98) 80%,
-    rgba(255,255,255,1) 100%
-  );
-  box-shadow: 0 0 6px 2px rgba(255,255,255,0.5), 0 0 16px 4px rgba(180,220,255,0.25);
-  animation: mFly var(--dur, 2.8s) cubic-bezier(.22,.8,.6,1) forwards;
-}
-.meteor::after {
-  content: ''; position: absolute;
-  right: -2px; top: 50%; transform: translateY(-50%);
-  width: 5px; height: 5px; border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 5px 2px rgba(255,255,255,.8), 0 0 12px 5px rgba(180,220,255,.45);
-}
-@keyframes mFly {
-  0%   { opacity: 0; transform: rotate(var(--ang)) translateX(0); }
-  6%   { opacity: 1; }
-  82%  { opacity: .75; }
-  100% { opacity: 0; transform: rotate(var(--ang)) translateX(var(--travel)); }
-}
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styleWeaver.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   </head>
   <body>
@@ -1964,6 +191,26 @@
               <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
             </svg>
           </div>
+          <span class="slabel-text">夢境日期</span>
+          <div class="slabel-line"></div>
+        </div>
+        <div style="margin: 0 0 18px; display:flex; justify-content:flex-start;">
+          <input
+            id="dream-date"
+            type="date"
+            value=""
+            style="width:220px;max-width:100%;padding:12px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:rgba(255,255,255,.55);"
+          />
+        </div>
+
+        <!-- ============ 新增：夢境欄位標籤（引自 preview .slabel）============ -->
+        <!-- 取代原本純文字的 <label>，改為圖示 + 小大寫文字 + 漸層尾線 -->
+        <div class="slabel">
+          <div class="slabel-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(155,120,255,.9)" stroke-width="2.2">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+          </div>
           <span class="slabel-text">夢境內容</span>
           <div class="slabel-line"></div>
         </div>
@@ -2110,7 +357,7 @@
         </div>
 
         <!-- 送出按鈕：目前僅在前端阻止預設表單行為，後續可串接 API -->
-        <div style="text-align: center; margin-top: 6px">
+        <div style="text-align: center; margin-top: 6px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
           <button id="submit-btn" class="submit-btn">
             <!-- 月亮圖示搭配按鈕文字 -->
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" style="position:relative;z-index:1;">
@@ -2118,8 +365,17 @@
             </svg>
             <span style="position:relative;z-index:1;">解密潛意識</span>
           </button>
+          <button id="save-only-btn" class="submit-btn" style="background:rgba(255,255,255,.07); color:#fff;">
+            <!-- 记录图示  -->
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" style="position:relative;z-index:1;">
+              <path d="M6 3h12v18H6z"/>
+              <path d="M6 8h12"/>
+              <path d="M9 12h6"/>
+            </svg>
+            <span style="position:relative;z-index:1;">只記錄夢境</span>
+          </button>
           <!-- ============ 新增：送出按鈕下方功能 hint 列（引自 preview .hint-row）============ -->
-          <div class="hint-row">
+          <div class="hint-row" style="flex:1 1 100%;">
             <div class="hint-tag"><div class="hint-dot"></div>AI 夢境分析</div>
             <div class="hint-tag"><div class="hint-dot"></div>潛意識圖像生成</div>
             <div class="hint-tag"><div class="hint-dot"></div>象徵標籤解碼</div>
@@ -2174,7 +430,13 @@ majorPos.forEach(([lx,ty])=>{
       const overlay = document.getElementById("intro-overlay");
       const noRealityCheckbox = document.getElementById("no-reality");
       const realityTextarea = document.getElementById("reality-content");
+      const dreamDateField = document.getElementById("dream-date");
       const submitBtn = document.getElementById("submit-btn");
+      const saveOnlyBtn = document.getElementById("save-only-btn");
+
+      if (dreamDateField && !dreamDateField.value) {
+        dreamDateField.value = new Date().toISOString().split("T")[0];
+      }
 
       // ============ 設定面板相關 DOM ============
       /* settings-toggle：新的 PNG 圖標版本（取代舊的 settings-icon SVG） */
@@ -2520,6 +782,12 @@ majorPos.forEach(([lx,ty])=>{
         const reality = realityTextarea.disabled
           ? null
           : realityTextarea.value.trim();
+        const dreamDateField = document.getElementById("dream-date");
+        let dreamDate = dreamDateField ? dreamDateField.value.trim() : "";
+        if (!dreamDate) {
+          const today = new Date();
+          dreamDate = today.toISOString().split("T")[0];
+        }
 
         // 簡單的前端驗證：夢境內容不可為空
         if (!dream) {
@@ -2689,7 +957,7 @@ majorPos.forEach(([lx,ty])=>{
         fetch("/api/analyze-dream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dream: dream, reality: reality }),
+          body: JSON.stringify({ dream: dream, reality: reality, dream_date: dreamDate }),
         })
           .then((response) => response.json())
           .then((data) => {
@@ -2744,6 +1012,18 @@ majorPos.forEach(([lx,ty])=>{
               }
             } else {
               emotion = res.emotion_tag || emotion;
+
+              // 新增：把 emotion_details 也存起來供遊戲推薦使用
+              if (res.emotion_details) {
+                  try {
+                      if (typeof res.emotion_details === 'string') {
+                          res.emotion_details = JSON.parse(res.emotion_details);
+                      }
+                  } catch(e) {
+                      res.emotion_details = null;
+                  }
+              }
+
               symbolTags = Array.isArray(res.symbol_tags)
                 ? res.symbol_tags
                 : [];
@@ -2813,6 +1093,17 @@ majorPos.forEach(([lx,ty])=>{
                 <button id="download-btn" style="padding: 8px 18px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 999px; background: rgba(255,255,255,0.1); color: white; cursor: pointer; backdrop-filter: blur(5px); transition: all 0.3s ease;">💾 封存夢境記憶</button>
                 <button id="ig-story-btn" style="padding: 8px 18px; font-size: 14px; border: 1px solid rgba(220,175,60,0.4); border-radius: 999px; background: rgba(220,175,60,0.12); color: rgba(255,230,140,0.95); cursor: pointer; backdrop-filter: blur(5px); transition: all 0.3s ease;">📲 下載 IG Story</button>
             </div>
+            <div id="game-recommend-btn" style="text-align:center; margin-top: 12px; display:none;">
+              <a id="game-link" href="#" target="_blank"
+                  style="display:inline-flex; align-items:center; gap:8px; padding:10px 24px;
+                        font-size:14px; border-radius:999px; text-decoration:none; color:#fff;
+                        background:linear-gradient(135deg,rgba(155,120,255,0.6),rgba(123,220,255,0.5));
+                        border:1px solid rgba(155,120,255,0.4);
+                        box-shadow:0 0 14px rgba(155,120,255,0.25);
+                        transition:all 0.3s ease;">
+                  🎮 <span id="game-btn-text">根據你的情緒玩個遊戲</span>
+              </a>
+          </div>
           `;
 
             // 設定漸層背景與必要的樣式（JS 直接設定 style 以利動態顏色）
@@ -2825,6 +1116,85 @@ majorPos.forEach(([lx,ty])=>{
 
             // 若需要，將結果卡片滾到可視範圍
             card.scrollIntoView({ behavior: "smooth" });
+            // ===== 根據情緒推薦遊戲 =====
+            const gameBtn = document.getElementById('game-recommend-btn');
+            const gameLink = document.getElementById('game-link');
+            const gameBtnText = document.getElementById('game-btn-text');
+
+            // 情緒關鍵字對應表
+            const emotionGameMap = [
+                {
+                    keywords: ['生氣','暴怒','煩躁','怨氣','不甘心','被背叛','吃醋','憤怒'],
+                    category: 'angry',
+                    url: '/games/angry',
+                    text: '😤 去批改考卷發洩一下'
+                },
+                {
+                    keywords: ['難過','悲傷','心碎','沮喪','委屈','悵然','依依不捨','遺憾','自責','無助'],
+                    category: 'sad',
+                    url: '/static/games/popfat/index.html',
+                    text: '😿 去狂點貓咪轉移注意力'
+                },
+                {
+                    keywords: ['開心','欣喜','滿足','愜意','成就感','刺激','期待','被肯定','歸屬感','喜悅','快樂'],
+                    category: 'happy',
+                    url: '/games/electric',
+                    text: '⚡ 心情好就來挑戰電流急急棒'
+                },
+                {
+                    keywords: ['焦慮','恐懼','忐忑','驚恐','不安','惶恐','社交焦慮','怕被拋棄','緊張'],
+                    category: 'anxious',
+                    url: '/static/games/minesweeper/index.html',
+                    text: '💣 專注排雷轉移焦慮'
+                },
+                {
+                    keywords: ['平靜','放鬆','釋然','寧靜','心動','患得患失','五味雜陳','愛恨交織','哭笑不得'],
+                    category: 'calm',
+                    url: '/games/tetris',
+                    text: '🧩 靜下來疊疊方塊吧'
+                }
+            ];
+
+            // 把情緒詞對應到 category 的輔助函式
+            function getCategory(keyword) {
+                for (const entry of emotionGameMap) {
+                    if (entry.keywords.some(k => keyword.includes(k) || k.includes(keyword))) {
+                        return entry.category;
+                    }
+                }
+                return null;
+            }
+
+            let finalCategory = null;
+
+            // 第一優先：用 emotion_details 比例最高的那個情緒決定
+            const emotionDetails = res.emotion_details;
+            if (emotionDetails && typeof emotionDetails === 'object') {
+                let maxWeight = -1;
+                let maxEmotion = '';
+                for (const [emo, weight] of Object.entries(emotionDetails)) {
+                    if (weight > maxWeight) {
+                        maxWeight = weight;
+                        maxEmotion = emo;
+                    }
+                }
+                if (maxEmotion) {
+                    finalCategory = getCategory(maxEmotion);
+                }
+            }
+
+            // 第二優先：emotion_details 比對不到時，用 emotion_tag 關鍵字比對
+            if (!finalCategory) {
+                finalCategory = getCategory(emotion);
+            }
+
+            // 找到對應的遊戲設定
+            const gameEntry = emotionGameMap.find(e => e.category === finalCategory)
+                || emotionGameMap.find(e => e.category === 'sad'); // 最終預設
+
+            gameLink.href = gameEntry.url;
+            gameBtnText.textContent = gameEntry.text;
+            gameBtn.style.display = 'block';
           })
           .catch((err) => {
             resultContainer.innerHTML =
@@ -2832,6 +1202,52 @@ majorPos.forEach(([lx,ty])=>{
             console.error(err);
           });
       });
+
+      if (saveOnlyBtn) {
+        saveOnlyBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+
+          const dream = document.getElementById("dream-content").value.trim();
+          const reality = realityTextarea.disabled
+            ? null
+            : realityTextarea.value.trim();
+          let dreamDate = dreamDateField ? dreamDateField.value.trim() : "";
+          if (!dreamDate) {
+            const today = new Date();
+            dreamDate = today.toISOString().split("T")[0];
+          }
+
+          if (!dream) {
+            alert("請先輸入夢境內容。");
+            return;
+          }
+
+          const resultContainer = document.getElementById("result-container");
+          resultContainer.innerHTML = `<div style="color:#b4d7ff;">正在儲存夢境，未送交 AI 分析...</div>`;
+
+          fetch("/api/save-dream-only", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dream: dream, reality: reality, dream_date: dreamDate }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (!data || !data.success) {
+                resultContainer.innerHTML = `<div style="color:#f66;">儲存失敗：${data && data.message ? data.message : "伺服器錯誤"}</div>`;
+                return;
+              }
+              resultContainer.innerHTML = `
+                <div style="max-width:520px;padding:24px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);box-shadow:0 18px 40px rgba(0,0,0,.15);color:#ebf4ff;">
+                  <h3 style="margin:0 0 10px;font-size:1rem;">夢境已儲存</h3>
+                  <p style="margin:0;line-height:1.7;color:rgba(235,244,255,.85);">已成功將夢境記錄到您的資料庫中，並保留為純文字紀錄，不送交 AI 分析或製作圖片。</p>
+                </div>
+              `;
+            })
+            .catch((err) => {
+              resultContainer.innerHTML = `<div style="color:#f66;">網路錯誤，請稍後再試。</div>`;
+            });
+        });
+      }
 
       /*
       ============ Lightbox 事件委派邏輯 ============
@@ -3070,133 +1486,11 @@ majorPos.forEach(([lx,ty])=>{
   track.appendChild(d);
 });
     </script>
-
-    <!-- 額外的滑鼠特效腳本：粒子軌跡與月亮游標 -->
-    <script>
-      // 這段腳本不會動到表單與 fetch 邏輯，只負責在背景產生微小的星光粒子與月亮游標。
-      const canvas = document.getElementById("particle-canvas");
-      const moon = document.getElementById("cursor-moon");
-      const ctx = canvas.getContext("2d");
-
-      let mouse = {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2,
-        moved: false,
-      };
-      let moonX = mouse.x;
-      let moonY = mouse.y;
-      const particles = [];
-
-      function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-
-      function spawnParticle(x, y) {
-        particles.push({
-          x,
-          y,
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: (Math.random() - 0.5) * 0.35,
-          r: Math.random() * 1.8 + 0.6,
-          life: 1,
-          maxLife: 1,
-          alpha: Math.random() * 0.45 + 0.25,
-        });
-      }
-
-      function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 讓月亮游標以輕微延遲跟隨滑鼠，模擬彈性流動感。
-        const ease = 0.08;
-        moonX += (mouse.x - moonX) * ease;
-        moonY += (mouse.y - moonY) * ease;
-        moon.style.left = moonX + "px";
-        moon.style.top = moonY + "px";
-
-        // 更新粒子與繪製星光點。
-        for (let i = particles.length - 1; i >= 0; i--) {
-          const p = particles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vx *= 0.96;
-          p.vy *= 0.96;
-          p.life -= 0.015;
-          p.alpha = (p.life / p.maxLife) * 0.55;
-
-          if (p.life <= 0) {
-            particles.splice(i, 1);
-            continue;
-          }
-
-          ctx.beginPath();
-          ctx.fillStyle = "rgba(255,255,255," + p.alpha + ")";
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = "rgba(180, 210, 255, 0.9)";
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        requestAnimationFrame(animate);
-      }
-
-      window.addEventListener("mousemove", (e) => {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
-        mouse.moved = true;
-        spawnParticle(e.clientX, e.clientY);
-      });
-
-      window.addEventListener(
-        "touchmove",
-        (e) => {
-          const t = e.touches[0];
-          if (!t) return;
-          mouse.x = t.clientX;
-          mouse.y = t.clientY;
-          spawnParticle(t.clientX, t.clientY);
-        },
-        { passive: true },
-      );
-
-      window.addEventListener("resize", resizeCanvas);
-      resizeCanvas();
-      animate();
-      
-      
-      const LANE_COUNT = 5;
-
-      function spawnMeteor(laneIndex) {
-        const ML = document.getElementById('meteor-layer'); // ← 移到函數內
-        if (!ML) return; // 找不到就安全跳過
-        const vh = window.innerHeight, vw = window.innerWidth;
-        const laneH  = vh / LANE_COUNT;
-        const startY = laneIndex * laneH + laneH * (.1 + Math.random() * .8);
-        const length = 160 + Math.random() * 120;
-        const startX = vw + length * .3 + Math.random() * 60;
-        const angle  = -(14 + Math.random() * 12);
-        const dur = 2.6 + Math.random() * 0.2; // 飛行時間
-        const travel = `${-(vw + length * 1.6)}px`;
-        const m = document.createElement('div');
-        m.className = 'meteor';
-        m.style.cssText = `left:${startX}px;top:${startY}px;width:${length}px;--ang:${angle}deg;--travel:${travel};--dur:${dur}s;`;
-        ML.appendChild(m);
-        setTimeout(() => m.remove(), (dur + .5) * 1000);
-      }
-
-      function scheduleLane(i) {
-        setTimeout(() => { spawnMeteor(i); scheduleLane(i); }, 2000 + Math.random() * 7000);
-      }
-
-      for (let i = 0; i < LANE_COUNT; i++) {
-        setTimeout(() => { spawnMeteor(i); scheduleLane(i); }, i * 600 + Math.random() * 800);
-      }
-    </script>
     <div id="image-lightbox" class="image-lightbox">
       <img id="lightbox-image" src="" alt="放大夢境記憶照片" />
     </div>
     <div id="aurora-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
     <div id="meteor-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
+    <script src="{{ url_for('static', filename='shared-dream-effects.js') }}"></script>
   </body>
 </html>

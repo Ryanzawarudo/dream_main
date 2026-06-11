@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>潛意識情緒圖表 - 夢境觀測</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styleCapsule.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body>
+    <div id="star-layer" aria-hidden="true"></div>
+
+    <div class="ambient-orb one"></div>
+    <div class="ambient-orb two"></div>
+    <div class="ambient-orb three"></div>
+
+    <svg style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:500px;height:500px;opacity:.025;pointer-events:none;z-index:0;animation:sigilRot 60s linear infinite;" viewBox="0 0 200 200">
+      <polygon points="100,10 190,155 10,155" fill="none" stroke="rgba(155,120,255,1)" stroke-width="1"/>
+      <polygon points="100,190 10,45 190,45" fill="none" stroke="rgba(155,120,255,1)" stroke-width="1"/>
+      <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(123,220,255,.8)" stroke-width=".8"/>
+      <circle cx="100" cy="100" r="52" fill="none" stroke="rgba(155,120,255,.6)" stroke-width=".6" stroke-dasharray="4 3"/>
+    </svg>
+
+    <svg style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.38;" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <line x1="80" y1="120" x2="280" y2="200" stroke="rgba(200,170,255,.9)" stroke-width="1"/>
+      <line x1="280" y1="200" x2="440" y2="150" stroke="rgba(200,170,255,.9)" stroke-width="1"/>
+      <line x1="440" y1="150" x2="560" y2="280" stroke="rgba(160,220,255,.85)" stroke-width="1"/>
+      <line x1="900" y1="100" x2="1060" y2="180" stroke="rgba(200,170,255,.85)" stroke-width="1"/>
+      <line x1="1060" y1="180" x2="1250" y2="130" stroke="rgba(200,170,255,.85)" stroke-width="1"/>
+      <line x1="1060" y1="180" x2="1150" y2="320" stroke="rgba(160,220,255,.8)" stroke-width="1"/>
+      <line x1="100" y1="650" x2="200" y2="780" stroke="rgba(200,170,255,.75)" stroke-width="1"/>
+      <line x1="1200" y1="700" x2="1350" y2="800" stroke="rgba(160,220,255,.75)" stroke-width="1"/>
+      <circle cx="80" cy="120" r="3" fill="rgba(220,190,255,1)"/>
+      <circle cx="280" cy="200" r="2.5" fill="rgba(220,190,255,.95)"/>
+      <circle cx="440" cy="150" r="2.8" fill="rgba(160,230,255,1)"/>
+      <circle cx="560" cy="280" r="2.2" fill="rgba(160,230,255,.9)"/>
+      <circle cx="900" cy="100" r="3" fill="rgba(255,180,230,.95)"/>
+      <circle cx="1060" cy="180" r="3.2" fill="rgba(220,190,255,1)"/>
+      <circle cx="1250" cy="130" r="2.5" fill="rgba(220,190,255,.9)"/>
+      <circle cx="1150" cy="320" r="2.2" fill="rgba(160,230,255,.9)"/>
+      <circle cx="100" cy="650" r="2.5" fill="rgba(220,190,255,.85)"/>
+      <circle cx="200" cy="780" r="2.2" fill="rgba(220,190,255,.8)"/>
+      <circle cx="1200" cy="700" r="2.5" fill="rgba(160,230,255,.85)"/>
+      <circle cx="1350" cy="800" r="2.2" fill="rgba(160,230,255,.8)"/>
+    </svg>
+
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+    <div id="cursor-moon" aria-hidden="true">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="moon cursor">
+        <path d="M40 10c-12 0-21 9-21 21s9 21 21 21c7 0 13-3 17-8-8 7-19 10-30 7C18 47 9 36 9 24 9 12 18 2 30 2c5 0 10 1 14 4-4-1-8-2-4-2z" fill="rgba(255,255,255,0.95)" />
+      </svg>
+    </div>
+
+    <a href="/" title="回到大廳" class="nav-icon-frame nav-top-left">
+      <img src="{{ url_for('static', filename='images/home_icon.png') }}" alt="回大廳" class="home-png-icon-inner" />
+      <div class="tt">回到大廳</div>
+    </a>
+
+    <main class="container">
+        <div class="chart-card">
+            <h1 class="chart-title">潛意識情緒輪廓</h1>
+            <div class="title-deco">
+                <div class="dl"></div><div class="dgem"></div><div class="dr"></div>
+            </div>
+            
+            <div class="controls-row">
+                <label for="chart-type">觀測視角：</label>
+                <select id="chart-type" class="glass-select">
+                    <option value="doughnut">能量環視圖 (Doughnut)</option>
+                    <option value="bar">頻率長條圖 (Bar)</option>
+                    <option value="stacked">進度條分配圖 (Progress Bar)</option>
+                </select>
+            </div>
+
+            <div id="emotion-pie-chart"></div>
+
+            <div id="hover-detail-box" class="hover-detail-box">
+                <h3 id="hover-emo-title" class="hover-emo-title">選擇的情緒</h3>
+                <ul id="hover-dream-list" class="dream-list"></ul>
+            </div>
+        </div>
+    </main>
+
+    <div id="aurora-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
+    <div id="meteor-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
+    <script src="{{ url_for('static', filename='shared-dream-effects.js') }}"></script>
+
+    <script>
+        (function () {
+            const starLayer = document.getElementById('star-layer');
+            if (!starLayer) return;
+            for(let i=0;i<45;i++){
+                const s=document.createElement('div');
+                s.className='st';
+                const sz=Math.random()*1.8+0.8;
+                s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--peak:${0.35+Math.random()*0.45};animation-duration:${2.5+Math.random()*4}s;animation-delay:${Math.random()*6}s;`;
+                starLayer.appendChild(s);
+            }
+            for(let i=0;i<20;i++){
+                const s=document.createElement('div');
+                s.className='st';
+                const sz=Math.random()*1.5+2.2;
+                s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--peak:${0.55+Math.random()*0.3};animation-duration:${3+Math.random()*3.5}s;animation-delay:${Math.random()*5}s;box-shadow:0 0 3px 0.5px rgba(200,220,255,0.25);`;
+                starLayer.appendChild(s);
+            }
+            const majorPos=[[8,12],[23,45],[67,18],[82,35],[15,72],[55,8],[44,62],[91,15],[38,82]];
+            majorPos.forEach(([lx,ty])=>{
+                const s=document.createElement('div');
+                s.className='st major';
+                const sz=3.5+Math.random()*1.5;
+                s.style.cssText=`width:${sz}px;height:${sz}px;left:${lx}%;top:${ty}%;animation-name:majorTwk;animation-duration:${4+Math.random()*3}s;animation-delay:${Math.random()*5}s;`;
+                starLayer.appendChild(s);
+            });
+        })();
+
+        let globalLabels = [];
+        let globalPercentValues = [];
+        let globalMapping = {}; 
+
+        const dreamColors = [
+            '#7b2ff7', '#00f5ff', '#f107a3', '#00ffe1', 
+            '#ff9a9e', '#a18cd1', '#ffecd2', '#00c6ff',
+            '#ff758c', '#ff7eb3', '#89f7fe', '#66a6ff',
+            '#fccb90', '#d57eeb', '#e0c3fc', '#8ec5fc'
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const chartDiv = document.getElementById('emotion-pie-chart');
+            const selectElement = document.getElementById('chart-type');
+            chartDiv.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:rgba(123,220,255,0.7); letter-spacing:2px; font-size:16px;">正在從資料庫凝聚情緒碎片...</div>';
+
+            fetch('/api/emotion-data')
+                .then(response => response.json())
+                .then(data => {
+                    chartDiv.innerHTML = ''; 
+
+                    if (data.success && data.labels.length > 0) {
+                        globalLabels = data.labels;
+                        globalMapping = data.mapping;
+
+                        const totalScore = data.values.reduce((a, b) => a + b, 0);
+                        globalPercentValues = data.values.map(v => parseFloat(((v / totalScore) * 100).toFixed(1)));
+                        
+                        const currentSum = globalPercentValues.reduce((a, b) => a + b, 0);
+                        if (globalPercentValues.length > 0 && currentSum !== 100.0) {
+                            const diff = parseFloat((100.0 - currentSum).toFixed(1));
+                            globalPercentValues[globalPercentValues.length - 1] = parseFloat((globalPercentValues[globalPercentValues.length - 1] + diff).toFixed(1));
+                        }
+                        
+                        renderChart(selectElement.value);
+
+                        selectElement.addEventListener('change', function(e) {
+                            hideHoverBox();
+                            renderChart(e.target.value);
+                        });
+
+                    } else {
+                        chartDiv.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:rgba(255,255,255,0.5);">目前尚無足夠的夢境情緒數據，請先至編織室記錄夢境。</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('獲取情緒數據失敗:', error);
+                    chartDiv.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:#f66;">連線潛意識資料庫失敗，請稍後再試。</div>';
+                });
+        });
+
+        function renderChart(type) {
+            let traces = [];
+            let layoutOptions = {};
+            const chartDiv = document.getElementById('emotion-pie-chart');
+
+            if (type === 'doughnut') {
+                traces = [{
+                    values: globalPercentValues,
+                    labels: globalLabels,
+                    type: 'pie',
+                    hole: 0.55, 
+                    textinfo: 'label+percent',
+                    textposition: 'outside',
+                    hoverinfo: 'label+percent',
+                    marker: { colors: dreamColors, line: { color: 'rgba(10, 15, 30, 0.8)', width: 2 } }
+                }];
+                layoutOptions = {
+                    showlegend: false,
+                    annotations: [{ font: { size: 14, color: 'rgba(123, 220, 255, 0.65)', letterSpacing: '3px' }, showarrow: false, text: 'EMOTION<br>SPECTRUM', x: 0.5, y: 0.5 }]
+                };
+
+            } else if (type === 'bar') {
+                traces = [{
+                    x: globalLabels,
+                    y: globalPercentValues,
+                    type: 'bar',
+                    text: globalPercentValues.map(v => v + '%'),
+                    textposition: 'auto',
+                    hoverinfo: 'x+text',
+                    marker: { color: dreamColors.slice(0, globalLabels.length), line: { color: 'rgba(10, 15, 30, 0.8)', width: 1 } }
+                }];
+                layoutOptions = {
+                    showlegend: false,
+                    yaxis: { range: [0, 100], ticksuffix: '%', tickfont: { color: 'rgba(231, 240, 255, 0.5)' }, gridcolor: 'rgba(255,255,255,0.1)' },
+                    xaxis: { tickfont: { color: '#e7f0ff' } }
+                };
+
+            } else if (type === 'stacked') {
+                traces = globalLabels.map((label, index) => ({
+                    x: [globalPercentValues[index]],
+                    y: ['潛意識佔比'],
+                    name: label,
+                    type: 'bar',
+                    orientation: 'h',
+                    text: globalPercentValues[index] > 5 ? `${label} ${globalPercentValues[index]}%` : '',
+                    textposition: 'inside',
+                    hoverinfo: 'name+text',
+                    hovertext: `${globalPercentValues[index]}%`,
+                    marker: { color: dreamColors[index % dreamColors.length], line: { color: 'rgba(10, 15, 30, 0.8)', width: 1 } }
+                }));
+                layoutOptions = {
+                    barmode: 'stack',
+                    showlegend: true,
+                    xaxis: { range: [0, 100], visible: false },
+                    yaxis: { visible: false },
+                    legend: { orientation: 'h', y: -0.1, font: { color: 'rgba(210, 222, 255, 0.8)' } }
+                };
+            }
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { t: 50, b: 50, l: 40, r: 40 },
+                textfont: { family: 'system-ui, sans-serif', size: 14, color: '#e7f0ff' },
+                ...layoutOptions
+            };
+
+            const config = { responsive: true, displayModeBar: false };
+            
+            // ✅ 使用 Plotly.react 取代 newPlot 進行平滑更新，並回傳 Promise 確保渲染完成後再綁定事件
+            Plotly.react('emotion-pie-chart', traces, layout, config).then(function() {
+                bindHoverEvents();
+            });
+        }
+
+        // ✅ 將事件綁定獨立出來，確保每次切換圖表後都能重新綁定
+        let lockedEmotion = null; // 記錄目前被點擊鎖定的情緒名稱，null 表示沒有鎖定
+
+function bindHoverEvents() {
+    const chartDiv = document.getElementById('emotion-pie-chart');
+    
+    // 移除舊的監聽器避免重複觸發
+    chartDiv.removeAllListeners('plotly_hover');
+    chartDiv.removeAllListeners('plotly_unhover');
+    chartDiv.removeAllListeners('plotly_click'); // 新增：移除舊的點擊監聽器
+
+    chartDiv.on('plotly_hover', function(eventData) {
+        const point = eventData.points[0];
+        // 支援不同圖表的資料結構抓取標籤名稱
+        let emotionName = point.label || point.data.name || point.x;
+        
+        // Stacked bar 特別處理：它的 point.x 可能是數值，名字藏在 point.data.name
+        if (point.data && point.data.type === 'bar' && point.data.orientation === 'h') {
+            emotionName = point.data.name;
+        }
+        if (globalMapping[emotionName]) {
+            showHoverBox(emotionName);
+        }
+    });
+
+    chartDiv.on('plotly_unhover', function() {
+        // 新增：如果目前有鎖定的情緒，滑鼠離開時維持顯示；否則正常隱藏
+        if (lockedEmotion) {
+            showHoverBox(lockedEmotion);
+        } else {
+            hideHoverBox();
+        }
+    });
+
+    // 新增：點擊事件，用來鎖定或解鎖情緒細節框
+    chartDiv.on('plotly_click', function(eventData) {
+        const point = eventData.points[0];
+        // 支援不同圖表的資料結構抓取標籤名稱（與 hover 邏輯一致）
+        let emotionName = point.label || point.data.name || point.x;
+        if (point.data && point.data.type === 'bar' && point.data.orientation === 'h') {
+            emotionName = point.data.name;
+        }
+        if (lockedEmotion === emotionName) {
+            // 點擊同一個已鎖定的情緒 → 解鎖並隱藏
+            lockedEmotion = null;
+            hideHoverBox();
+        } else {
+            // 點擊新的情緒 → 鎖定並顯示
+            lockedEmotion = emotionName;
+            showHoverBox(emotionName);
+        }
+    });
+}
+
+        function showHoverBox(emotionName) {
+            const box = document.getElementById('hover-detail-box');
+            const title = document.getElementById('hover-emo-title');
+            const list = document.getElementById('hover-dream-list');
+
+            title.textContent = `在這些夢境裡感受到「${emotionName}」：`;
+            list.innerHTML = '';
+            
+            const dreams = globalMapping[emotionName] || [];
+            if (dreams.length === 0) {
+                list.innerHTML = '<li class="dream-list-item">無相關夢境紀錄。</li>';
+            } else {
+                dreams.forEach(d => {
+                    const li = document.createElement('li');
+                    li.className = 'dream-list-item';
+                    li.innerHTML = `<span class="date-badge">${d.date}</span> <span>${d.snippet}</span>`;
+                    list.appendChild(li);
+                });
+            }
+
+            box.classList.add('active');
+        }
+
+        function hideHoverBox() {
+            const box = document.getElementById('hover-detail-box');
+            box.classList.remove('active');
+        }
+    </script>
+</body>
+</html>

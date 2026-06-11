@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop Cat - 遊戲</title>
+    <link rel="stylesheet" href="css/style.css">
+    </head>
+<body>
+    <div class="container">
+        <h1>Pop Fat</h1>
+        <div class="score-board">
+            <div class="combo">
+                <span>點擊次數:</span>
+                <span id="combo">0</span>
+            </div>
+        </div>
+        <div class="game-area">
+            <button id="gameButton" class="game-button">
+                <img id="buttonImage" src="assets/images/open.png" alt="Pop Cat">
+            </button>
+        </div>
+        <div class="chart-container">
+            <h3>點擊速率</h3>
+            <canvas id="rateChart" width="280" height="200"></canvas>
+            <p id="currentRate">0 次/秒</p>
+        </div>
+        <div class="game-info">
+            <p id="timer">時間: 15秒</p>
+        </div>
+        <div class="game-over" id="gameOver" style="display: none;">
+            <div class="modal-content">
+                <h2>恭喜你！</h2>
+                <p>成功讓這隻胖貓增加 <span id="finalScore">0</span> 公斤</p>
+                <button id="playAgainBtn" class="btn btn-primary">再玩一次</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/game.js"></script>
+    </body>
+</html>

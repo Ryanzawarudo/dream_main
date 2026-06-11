@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <!-- ==================== 元資料與基本設定 ==================== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>📋 考卷批改遊戲</title>
+
+    <style>
+        /* ==================== 全域樣式 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            /* 字體設定 */
+            font-family: 'Segoe UI', 'Arial', '微軟正黑體', sans-serif;
+            /* 背景漸層 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            /* 防止用戶選擇文字（提升遊戲體驗） */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* ==================== 主遊戲容器（Flexbox 絕對置中） ==================== */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;           /* 水平置中 */
+            justify-content: center;       /* 垂直置中 */
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* ==================== 進度條 ==================== */
+        .progress-bar {
+            /* 固定位置在頁面頂部 */
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            
+            /* 文字樣式 */
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            
+            /* Z-index 確保在最上層 */
+            z-index: 10;
+        }
+
+        .progress-bar span {
+            color: #FFD700;             /* 黃金色強調 */
+            font-weight: bold;
+        }
+
+        /* ==================== Canvas 容器（外層包裝器） ==================== */
+        .canvas-wrapper {
+            /* 相對定位作為動畫參考點 */
+            position: relative;
+            
+            /* 外觀樣式 */
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            
+            /* 進場動畫：從右側滑入 */
+            animation: slideInFromRight 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 
+        【進場動畫定義】
+        從頁面外右側 (translateX(100vw)) 平滑滑入到正中央 (translateX(0))
+        使用 cubic-bezier 製造彈性效果
+        */
+        @keyframes slideInFromRight {
+            from {
+                transform: translateX(100vw);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ==================== Canvas 元素 ==================== */
+        canvas {
+            /* Canvas 必須是 block 元素，避免底部間距 */
+            display: block;
+            /* 滑鼠切換為紅筆游標，方便在考卷上批改 */
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M4 28 L8 24 L24 8 L28 12 L12 28 Z' fill='%23ff0000' stroke='%23000000' stroke-width='2'/><circle cx='22' cy='10' r='3' fill='%23ff0000' stroke='%23000000' stroke-width='2'/></svg>") 10 22, crosshair;
+            /* 防止在 Canvas 上出現文字選擇游標 */
+            user-select: none;
+        }
+
+        /* ==================== 下一張按鈕 ==================== */
+        .next-button {
+            /* 尺寸與間距 */
+            margin-top: 35px;
+            padding: 14px 45px;
+            
+            /* 文字樣式 */
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            
+            /* 按鈕樣式 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            
+            /* 互動效果 */
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 按鈕懸停效果 */
+        .next-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.35);
+        }
+
+        /* 按鈕按下效果 */
+        .next-button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        /* 按鈕禁用狀態 */
+        .next-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ==================== 規則說明彈窗 ==================== */
+        /* 彈窗遮罩背景 */
+        .modal-overlay {
+            /* 全螢幕遮罩 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* 半透明黑色背景 */
+            background: rgba(0, 0, 0, 0.75);
+            
+            /* 使用 Flexbox 置中內容 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            /* 確保在最上層 */
+            z-index: 1000;
+            
+            /* 過渡動畫 */
+            transition: opacity 0.3s ease;
+        }
+
+        /* 遮罩隱藏時的透明度 */
+        .modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 彈窗主體 */
+        .modal {
+            /* 內間距 */
+            padding: 45px;
+            
+            /* 背景與邊框 */
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            
+            /* 最大寬度限制 */
+            max-width: 650px;
+            width: 90%;
+            
+            /* 動畫進場 */
+            animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 彈窗進場動畫 */
+        @keyframes modalSlideIn {
+            from {
+                transform: scale(0.8) translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* 彈窗標題 */
+        .modal h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        /* 規則文字容器 */
+        .modal .rules {
+            /* 文字對齊 */
+            text-align: left;
+            margin: 25px 0;
+            
+            /* 行高與顏色 */
+            line-height: 1.9;
+            color: #555;
+            font-size: 15px;
+        }
+
+        /* 規則段落樣式 */
+        .modal .rules p {
+            margin: 12px 0;
+            margin-left: 15px;
+        }
+
+        /* 規則標題 */
+        .modal .rules strong {
+            color: #667eea;
+        }
+
+        /* 彈窗按鈕 */
+        .modal-button {
+            /* 尺寸 */
+            display: block;
+            width: 100%;
+            max-width: 250px;
+            margin: 30px auto 0;
+            padding: 13px 30px;
+            
+            /* 文字 */
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            
+            /* 按鈕樣式 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            
+            /* 互動 */
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* 彈窗按鈕懸停 */
+        .modal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        /* 彈窗按鈕按下 */
+        .modal-button:active {
+            transform: translateY(0);
+        }
+
+        /* ==================== 右下角操作提示 ==================== */
+        .tips {
+            /* 固定在右下角 */
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            
+            /* 文字樣式 */
+            text-align: right;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 13px;
+            line-height: 1.7;
+            
+            /* Z-index 在彈窗之下 */
+            z-index: 5;
+            
+            /* 防止干擾遊戲 */
+            pointer-events: none;
+            
+            /* 文字陰影增強可讀性 */
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .tips div {
+            margin: 5px 0;
+        }
+
+        /* ==================== 遊戲結束彈窗 ==================== */
+        /* 遊戲結束時的全螢幕遮罩 */
+        .game-over-modal {
+            /* 全螢幕覆蓋 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* 深色半透明背景 */
+            background: rgba(0, 0, 0, 0.85);
+            
+            /* Flexbox 置中 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            /* 最高層級 */
+            z-index: 2000;
+        }
+
+        /* 遊戲結束內容 */
+        .game-over-content {
+            /* 文字置中 */
+            text-align: center;
+            
+            /* 文字大小與顏色 */
+            font-size: 72px;
+            font-weight: bold;
+            color: #FFD700;
+            
+            /* 文字陰影 */
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
+            
+            /* 進場動畫 */
+            animation: celebrationPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            
+            /* 允許底線重疊 */
+            line-height: 1.4;
+        }
+
+        /* 遊戲結束按鈕 */
+        .game-over-content .modal-button {
+            font-size: 18px;
+            padding: 14px 28px;
+            border-radius: 999px;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.35);
+        }
+
+        /* 慶祝彈出動畫 */
+        @keyframes celebrationPop {
+            0% {
+                transform: scale(0.3) rotateX(45deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1) rotateX(0deg);
+            }
+            100% {
+                transform: scale(1) rotateX(0deg);
+                opacity: 1;
+            }
+        }
+
+        /* ==================== 響應式設計 ==================== */
+        @media (max-width: 768px) {
+            .progress-bar {
+                font-size: 16px;
+                top: 15px;
+            }
+
+            .canvas-wrapper {
+                max-width: 90vw;
+                max-height: 60vh;
+            }
+
+            .next-button {
+                margin-top: 25px;
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+
+            .modal {
+                padding: 30px;
+                max-width: 90vw;
+            }
+
+            .modal h2 {
+                font-size: 24px;
+                margin-bottom: 15px;
+            }
+
+            .modal .rules {
+                font-size: 14px;
+                line-height: 1.7;
+            }
+
+            .game-over-content {
+                font-size: 48px;
+            }
+
+            .tips {
+                font-size: 11px;
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== 進度條 ==================== -->
+    <div class="progress-bar" id="progressBar">
+        第 <span id="currentNumber">-</span> 張 / 共 <span id="totalNumber">-</span> 張
+    </div>
+
+    <!-- ==================== 主遊戲容器 ==================== -->
+    <div class="game-container">
+        <!-- Canvas 容器：遊戲尚未開始時隱藏 -->
+        <div class="canvas-wrapper" id="canvasWrapper" style="display: none;">
+            <!-- HTML5 Canvas 元素：用於繪製考卷與紅筆痕跡 -->
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <!-- 下一張按鈕：遊戲尚未開始時隱藏 -->
+        <button class="next-button" id="nextButton" style="display: none;">
+            ⏭️ 下一張
+        </button>
+    </div>
+
+    <!-- ==================== 規則說明彈窗 ==================== -->
+    <!-- 此彈窗在進入網站時自動顯示，用戶點擊「開始遊戲」後隱藏 -->
+    <div class="modal-overlay" id="rulesModal">
+        <div class="modal">
+            <h2>📋 歡迎來到考卷批改遊戲！</h2>
+            <div class="rules">
+                <p><strong>【規則說明】：</strong></p>
+                <p>1. 點擊開始後，考卷會從右側滑入畫面中央。</p>
+                <p>2. 您的滑鼠就是紅筆，按住【滑鼠左鍵】並拖曳，即可在考卷上進行圈選、批改。</p>
+                <p>3. 批改完成後，請點擊下方的「下一張」按鈕切換。</p>
+                <p>4. 改完所有考卷後遊戲即結束。</p>
+            </div>
+            <button class="modal-button" id="startButton">開始遊戲</button>
+        </div>
+    </div>
+
+    <!-- ==================== 遊戲結束彈窗 ==================== -->
+    <!-- 當所有考卷批改完成後自動顯示此彈窗 -->
+    <div class="game-over-modal" id="gameOverModal" style="display: none;">
+        <div class="game-over-content">
+            您已完成所有考卷的批改！
+            <button class="modal-button" id="restartButton" style="margin-top: 30px;">重新開始</button>
+        </div>
+    </div>
+
+    <!-- ==================== 右下角操作提示 ==================== */
+    <!-- 字體調淡、位置固定在右下角，不干擾遊戲體驗 -->
+    <div class="tips">
+        <div>左鍵：紅筆寫入</div>
+        <div>下方按鈕：更換考卷</div>
+    </div>
+
+    <!-- ==================== JavaScript 遊戲邏輯 ==================== -->
+    <script>
+        // ==================== 全域遊戲狀態 ====================
+        const gameState = {
+            gameStarted: false,        // 遊戲是否已開始
+            gameOver: false,           // 遊戲是否結束
+            isDrawing: false,          // 滑鼠是否正在繪製
+            currentPaperIndex: 0,      // 目前考卷索引（1-based）
+            totalPapers: 0             // 總考卷數量
+        };
+
+        // ==================== DOM 元素引用 ====================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');          // Canvas 2D 繪圖上下文
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const nextButton = document.getElementById('nextButton');
+        const rulesModal = document.getElementById('rulesModal');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const startButton = document.getElementById('startButton');
+        const progressBar = document.getElementById('progressBar');
+        const restartButton = document.getElementById('restartButton');
+
+        // ==================== 頁面初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // 規則彈窗預設顯示，用戶點擊「開始遊戲」按鈕時開始遊戲
+            startButton.addEventListener('click', startGame);
+
+            // Canvas 滑鼠事件監聽器
+            canvas.addEventListener('mousedown', startDrawing);    // 按下滑鼠
+            canvas.addEventListener('mousemove', draw);            // 移動滑鼠
+            canvas.addEventListener('mouseup', stopDrawing);       // 放開滑鼠
+            canvas.addEventListener('mouseout', stopDrawing);      // 滑鼠離開 Canvas
+
+            // 下一張按鈕事件監聽器
+            nextButton.addEventListener('click', goToNextPaper);
+
+            // 重新開始按鈕事件監聽器
+            restartButton.addEventListener('click', restartGame);
+        });
+
+        // ==================== 開始遊戲函數 ====================
+        /**
+         * 【startGame】
+         * 功能：隱藏規則彈窗並向伺服器請求第一張考卷
+         */
+        async function startGame() {
+            // 隱藏規則彈窗
+            rulesModal.style.display = 'none';
+            gameState.gameStarted = true;
+
+            // 從伺服器取得第一張考卷
+            await loadNextPaper();
+        }
+
+        // ==================== 載入下一張考卷函數 ====================
+        /**
+         * 【loadNextPaper】
+         * 功能：向 Flask 後端發送 POST 請求，取得下一張考卷的資訊
+         * 流程：
+         *   1. 呼叫 /get_next_paper 路由
+         *   2. 檢查遊戲是否結束
+         *   3. 若未結束，載入圖片並顯示 Canvas 與按鈕
+         */
+        async function loadNextPaper() {
+            try {
+                // 向後端發送請求
+                const response = await fetch('/get_next_paper', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // 解析 JSON 回應
+                const data = await response.json();
+
+                // 【檢查遊戲是否結束】
+                if (data.game_over) {
+                    endGame();
+                    return;
+                }
+
+                // 【更新遊戲狀態】
+                gameState.currentPaperIndex = data.current;
+                gameState.totalPapers = data.total;
+                updateProgressBar();
+
+                // 【載入考卷圖片到 Canvas】
+                loadPaperImage(data.paper_url);
+
+                // 【顯示遊戲元素】
+                canvasWrapper.style.display = 'block';
+                nextButton.style.display = 'block';
+
+            } catch (error) {
+                console.error('載入考卷失敗：', error);
+                alert('無法連接伺服器，請刷新頁面重試。');
+            }
+        }
+
+        // ==================== 載入考卷圖片函數 ====================
+        /**
+         * 【loadPaperImage】
+         * 功能：將考卷圖片載入到 Canvas 上
+         * 參數：imageUrl - 圖片的 URL 路徑
+         * 特效：
+         *   - 重新觸發進場動畫（從右側滑入）
+         *   - 若圖片載入失敗，顯示錯誤訊息
+         */
+        function loadPaperImage(imageUrl) {
+            const img = new Image();
+
+            // 圖片載入成功時的回調函數
+            img.onload = function() {
+                // 【調整 Canvas 尺寸以適應圖片】
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                // 【清空 Canvas 並繪製新圖片】
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+
+                // 【重新觸發進場動畫】
+                // 移除動畫再重新添加，強制動畫重播
+                canvasWrapper.style.animation = 'none';
+                setTimeout(() => {
+                    canvasWrapper.style.animation = 'slideInFromRight 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                }, 10);
+            };
+
+            // 圖片載入失敗時的回調函數
+            img.onerror = function() {
+                console.error('考卷圖片載入失敗：' + imageUrl);
+                
+                // 設定 Canvas 預設尺寸
+                canvas.width = 800;
+                canvas.height = 600;
+
+                // 繪製灰色背景
+                ctx.fillStyle = '#f5f5f5';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 繪製邊框
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+                // 繪製錯誤提示文字
+                ctx.fillStyle = '#999';
+                ctx.font = 'bold 28px Arial, 微軟正黑體';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('❌ 考卷圖片載入失敗', canvas.width / 2, canvas.height / 2);
+                ctx.font = '16px Arial, 微軟正黑體';
+                ctx.fillStyle = '#bbb';
+                ctx.fillText(`(請確認檔案：${imageUrl})`, canvas.width / 2, canvas.height / 2 + 40);
+            };
+
+            // 【開始載入圖片】
+            img.src = imageUrl;
+        }
+
+        // ==================== 滑鼠繪製功能 ====================
+
+        /**
+         * 【startDrawing】
+         * 功能：當滑鼠按下時，開始記錄繪製路徑
+         * 觸發條件：
+         *   - 遊戲已開始
+         *   - 遊戲未結束
+         *   - 滑鼠左鍵按下
+         */
+        function startDrawing(e) {
+            // 若遊戲未開始或已結束，不允許繪製
+            if (!gameState.gameStarted || gameState.gameOver) return;
+
+            gameState.isDrawing = true;
+
+            // 【計算滑鼠相對於 Canvas 的座標】
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 【開始新的繪製路徑】
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        /**
+         * 【draw】
+         * 功能：當滑鼠移動時，在 Canvas 上繪製紅色線條
+         * 特性：
+         *   - 線條顏色：紅色 (#FF0000)
+         *   - 線條粗細：3 像素
+         *   - 線條端點：圓形（lineCap: 'round'）
+         *   - 線條接角：圓形（lineJoin: 'round'），使邊緣平滑
+         */
+        function draw(e) {
+            // 若未在繪製中或遊戲未開始，不進行繪製
+            if (!gameState.isDrawing || !gameState.gameStarted || gameState.gameOver) return;
+
+            // 【計算滑鼠相對於 Canvas 的座標】
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 【設定紅筆的繪製參數】
+            ctx.strokeStyle = '#FF0000';      // 紅色
+            ctx.lineWidth = 3;               // 3 像素粗細
+            ctx.lineCap = 'round';           // 端點為圓形
+            ctx.lineJoin = 'round';          // 接角為圓形（邊緣平滑）
+
+            // 【繪製線段】
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        /**
+         * 【stopDrawing】
+         * 功能：當滑鼠放開或離開 Canvas 時，停止繪製
+         */
+        function stopDrawing() {
+            gameState.isDrawing = false;
+            ctx.closePath();
+        }
+
+        // ==================== 下一張按鈕函數 ====================
+        /**
+         * 【goToNextPaper】
+         * 功能：點擊「下一張」按鈕時的處理函數
+         * 流程：
+         *   1. 清空 Canvas 上的紅筆痕跡
+         *   2. 向伺服器請求下一張考卷
+         */
+        async function goToNextPaper() {
+            // 【清空 Canvas 上的所有繪製痕跡】
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 【載入下一張考卷】
+            await loadNextPaper();
+        }
+
+        // ==================== 更新進度條函數 ====================
+        /**
+         * 【updateProgressBar】
+         * 功能：更新頁面上的進度條顯示
+         * 更新內容：「第 X 張 / 共 Y 張」
+         */
+        function updateProgressBar() {
+            document.getElementById('currentNumber').textContent = gameState.currentPaperIndex > 0 ? gameState.currentPaperIndex : '-';
+            document.getElementById('totalNumber').textContent = gameState.totalPapers > 0 ? gameState.totalPapers : '-';
+        }
+
+        // ==================== 重新開始遊戲函數 ====================
+        /**
+         * 【restartGame】
+         * 功能：當使用者點擊重新開始時，呼叫後端重置進度並回到起始畫面
+         */
+        async function restartGame() {
+            try {
+                await fetch('/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // 重置前端狀態
+                gameState.gameStarted = false;
+                gameState.gameOver = false;
+                gameState.currentPaperIndex = 0;
+                gameState.totalPapers = 0;
+                updateProgressBar();
+
+                // 隱藏遊戲畫面並顯示規則說明彈窗
+                canvasWrapper.style.display = 'none';
+                nextButton.style.display = 'none';
+                gameOverModal.style.display = 'none';
+                rulesModal.style.display = 'flex';
+
+                // 清空 Canvas 內容
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            } catch (error) {
+                console.error('重新開始遊戲失敗：', error);
+                alert('無法重新開始遊戲，請稍後重試。');
+            }
+        }
+
+        // ==================== 遊戲結束函數 ====================
+        /**
+         * 【endGame】
+         * 功能：當所有考卷批改完成時，結束遊戲
+         * 動作：
+         *   1. 設定遊戲狀態為結束
+         *   2. 隱藏 Canvas 與下一張按鈕
+         *   3. 顯示遊戲結束彈窗
+         */
+        function endGame() {
+            // 【設定遊戲狀態】
+            gameState.gameOver = true;
+
+            // 【隱藏遊戲元素】
+            canvasWrapper.style.display = 'none';
+            nextButton.style.display = 'none';
+
+            // 【顯示遊戲結束彈窗】
+            gameOverModal.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

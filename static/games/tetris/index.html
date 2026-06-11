@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>俄羅斯方塊</title>
+  <link rel="stylesheet" href="/static/games/tetris/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>俄羅斯方塊</h1>
+    </header>
+    <main>
+      <section class="game-panel">
+        <div class="canvas-wrap">
+          <div class="overlay" id="startOverlay">
+            <h2>俄羅斯方塊</h2>
+            <button id="startBtn">開始遊戲</button>
+          </div>
+          <canvas id="tetris" width="240" height="480"></canvas>
+          <div class="overlay hidden" id="gameOverOverlay">
+            <h2>遊戲結束</h2>
+            <p>最終分數：<span id="finalScore">0</span></p>
+            <p>評級：<span id="finalRating">C</span></p>
+            <p class="rating-message hidden" id="ratingMessage">請加油！</p>
+            <button id="restartBtn">重新開始</button>
+          </div>
+        </div>
+        <aside class="info-panel">
+          <div class="scoreboard">
+            <div class="status">
+              <div>分數：<span id="score">0</span></div>
+              <div>等級：<span id="level">0</span></div>
+              <div>已消除行數：<span id="lines">0</span></div>
+            </div>
+          </div>
+          <div class="next-piece">
+            <h2>下一個</h2>
+            <canvas id="nextCanvas" width="120" height="120"></canvas>
+          </div>
+          <div class="controls">
+            <h2>說明</h2>
+            <p>← →：左右移動</p>
+            <p>↑：旋轉方塊</p>
+            <p>↓：加速下降</p>
+            <p>空白鍵：一鍵落下</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+  <audio id="bgMusic" loop autoplay>
+    <source src="/static/games/tetris/music/bg-music.mp3" type="audio/mpeg" />
+    您的瀏覽器不支援音訊播放。
+  </audio>
+  <script src="/static/games/tetris/tetris.js" defer></script>
+</body>
+</html>

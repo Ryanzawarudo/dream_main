@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心靈數據室</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styleWeaver.css') }}">
+</head>
+<body>
+    <!-- ============ 星點背景層（新增：星空感）============ -->
+    <!-- 由 JS 動態生成 55 個隨機位置與大小的星點，產生閃爍星空效果 -->
+    <div id="star-layer" aria-hidden="true"></div>
+
+    <!-- 背景環境光球：放在最底層，作為 Aurora 效果 -->
+    <div class="ambient-orb one"></div>
+    <div class="ambient-orb two"></div>
+    <div class="ambient-orb three"></div>
+    <!-- ⑤ 成功置入：六芒星水印 -->
+    <svg style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:500px;height:500px;opacity:.025;pointer-events:none;z-index:0;animation:sigilRot 60s linear infinite;" viewBox="0 0 200 200">
+      <polygon points="100,10 190,155 10,155" fill="none" stroke="rgba(155,120,255,1)" stroke-width="1"/>
+      <polygon points="100,190 10,45 190,45" fill="none" stroke="rgba(155,120,255,1)" stroke-width="1"/>
+      <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(123,220,255,.8)" stroke-width=".8"/>
+      <circle cx="100" cy="100" r="52" fill="none" stroke="rgba(155,120,255,.6)" stroke-width=".6" stroke-dasharray="4 3"/>
+    </svg>
+    <!-- 原本的星座連線 SVG -->
+    <svg style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.38;" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <line x1="80" y1="120" x2="280" y2="200" stroke="rgba(200,170,255,.9)" stroke-width="1"/>
+    <line x1="280" y1="200" x2="440" y2="150" stroke="rgba(200,170,255,.9)" stroke-width="1"/>
+    <line x1="440" y1="150" x2="560" y2="280" stroke="rgba(160,220,255,.85)" stroke-width="1"/>
+    <line x1="900" y1="100" x2="1060" y2="180" stroke="rgba(200,170,255,.85)" stroke-width="1"/>
+    <line x1="1060" y1="180" x2="1250" y2="130" stroke="rgba(200,170,255,.85)" stroke-width="1"/>
+    <line x1="1060" y1="180" x2="1150" y2="320" stroke="rgba(160,220,255,.8)" stroke-width="1"/>
+    <line x1="100" y1="650" x2="200" y2="780" stroke="rgba(200,170,255,.75)" stroke-width="1"/>
+    <line x1="1200" y1="700" x2="1350" y2="800" stroke="rgba(160,220,255,.75)" stroke-width="1"/>
+
+    <circle cx="80" cy="120" r="3" fill="rgba(220,190,255,1)"/>
+    <circle cx="280" cy="200" r="2.5" fill="rgba(220,190,255,.95)"/>
+    <circle cx="440" cy="150" r="2.8" fill="rgba(160,230,255,1)"/>
+    <circle cx="560" cy="280" r="2.2" fill="rgba(160,230,255,.9)"/>
+    <circle cx="900" cy="100" r="3" fill="rgba(255,180,230,.95)"/>
+    <circle cx="1060" cy="180" r="3.2" fill="rgba(220,190,255,1)"/>
+    <circle cx="1250" cy="130" r="2.5" fill="rgba(220,190,255,.9)"/>
+    <circle cx="1150" cy="320" r="2.2" fill="rgba(160,230,255,.9)"/>
+    <circle cx="100" cy="650" r="2.5" fill="rgba(220,190,255,.85)"/>
+    <circle cx="200" cy="780" r="2.2" fill="rgba(220,190,255,.8)"/>
+    <circle cx="1200" cy="700" r="2.5" fill="rgba(160,230,255,.85)"/>
+    <circle cx="1350" cy="800" r="2.2" fill="rgba(160,230,255,.8)"/>
+  </svg>
+    <div id="star-layer" aria-hidden="true"></div>
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+    <div id="cursor-moon" aria-hidden="true">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="moon cursor">
+        <path
+          d="M40 10c-12 0-21 9-21 21s9 21 21 21c7 0 13-3 17-8-8 7-19 10-30 7C18 47 9 36 9 24 9 12 18 2 30 2c5 0 10 1 14 4-4-1-8-2-4-2z"
+          fill="rgba(255,255,255,0.95)"
+        />
+      </svg>
+    </div>
+    <div class="ambient-orb one"></div>
+    <div class="ambient-orb two"></div>
+    <div class="ambient-orb three"></div>
+
+    <!-- 左上 Home 圖示 -->
+    <a href="/" title="回到大廳" class="nav-icon-frame home-frame nav-top-left">
+        <img
+            src="{{ url_for('static', filename='images/home_icon.png') }}"
+            alt="回大廳"
+            class="home-png-icon-inner"
+        />
+        <div class="tt">回到大廳</div>
+    </a>
+
+    <!-- 右上 Settings 圖示 -->
+    <a
+        href="#"
+        id="settings-toggle"
+        title="設定"
+        class="nav-icon-frame settings-frame nav-top-right"
+    >
+        <img
+            src="{{ url_for('static', filename='images/my_settings.png') }}"
+            alt="設定"
+            class="settings-png-icon"
+        />
+        <div class="tt">設定</div>
+    </a>
+
+    <!-- 設定面板模態 -->
+    <div id="settings-modal">
+        <div class="settings-panel">
+            <h2>設定</h2>
+            <button
+                class="close-btn"
+                id="close-settings-btn"
+                type="button"
+                title="關閉"
+            >
+                ✕
+            </button>
+
+            <!-- 背景音樂開關 -->
+            <div class="settings-option">
+                <div class="toggle-switch">
+                    <input type="checkbox" id="toggle-music" title="切換背景環境音" />
+                    <div class="switch-slider"></div>
+                </div>
+                <label for="toggle-music">開啟潛意識環境音</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背景音訊 -->
+    <audio id="bg-music" loop>
+        <source
+            src="{{ url_for('static', filename='audio/dream_lofi.mp3') }}"
+            type="audio/mpeg"
+        />
+        你的瀏覽器不支援音訊播放。
+    </audio>
+
+    <main class="container">
+      <div class="card">
+        <section class="panel active">
+            <h2 class="main-title">心靈數據室</h2>
+            <div class="title-deco"><span class="dl"></span><span class="dgem"></span><span class="dr"></span></div>
+            <p class="lead">使用者：<strong>{{ user or '訪客' }}</strong></p>
+            {% if user %}
+                <p>歡迎回來，<strong>{{ user }}</strong>。以下是您過去記錄的夢境：</p>
+                {% if dreams %}
+                    <!-- 排序選單 -->
+                    <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                        <label for="sort-select" style="color: rgba(255,255,255,.75); font-size: 0.9rem;">排序方式：</label>
+                        <!-- 把原本的 select 整個換成這個 -->
+                        <div style="position:relative; display:inline-block;">
+                            <select id="sort-select" onchange="sortDreams(this.value)"
+                                style="appearance:none; background: rgba(30,20,60,.95); color: #fff;
+                                    border: 1px solid rgba(155,120,255,.5); border-radius: 10px;
+                                    padding: 6px 36px 6px 14px; font-size: 0.9rem; cursor: pointer; outline: none;">
+                                <option value="new" style="background: rgba(30,20,60,.95);">時間：由新到舊</option>
+                                <option value="old" style="background: rgba(30,20,60,.95);">時間：由舊到新</option>
+                            </select>
+                            <!-- 自訂箭頭 -->
+                            <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                                        pointer-events:none; color:rgba(155,120,255,.9); font-size:0.75rem;">▼</span>
+                        </div>
+                    </div>
+                    <div class="dream-list" id="dream-list-container">
+                        {% for dream in dreams %}
+                            <article class="dream-card" style="margin-bottom: 22px; padding: 18px; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; background: rgba(255,255,255,.04); backdrop-filter: blur(6px);">
+                                <h3 style="margin-bottom: 10px;">
+                                  夢境 {{ loop.index }}
+                                  <span class="dream-time" style="font-size: 0.92rem; color: rgba(255,255,255,.65);">
+                                    {{ dream.dream_date or dream.timestamp }}
+                                  </span>
+                                </h3>
+                                {% if dream.image_path %}
+                                    <div style="margin-bottom: 14px; text-align:center;">
+                                        <img
+                                            src="{% if dream.image_path.startswith('http') or dream.image_path.startswith('/') %}{{ dream.image_path }}{% else %}{{ url_for('static', filename=dream.image_path) }}{% endif %}"
+                                            alt="夢境圖片 {{ loop.index }}"
+                                            style="max-width:100%;height:auto;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.15);"
+                                        >
+                                    </div>
+                                {% endif %}
+                                <p><strong>夢境內容：</strong> {{ dream.dream_content }}</p>
+                                {% if dream.reality_content %}
+                                    <p><strong>現實關聯：</strong> {{ dream.reality_content }}</p>
+                                {% endif %}
+                                {% if dream.emotion_tag %}
+                                    <p><strong>情緒標籤：</strong> {{ dream.emotion_tag }}</p>
+                                {% endif %}
+                                {% if dream.ai_analysis %}
+                                    <p><strong>AI 分析：</strong> {{ dream.ai_analysis }}</p>
+                                {% endif %}
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>目前尚未找到任何夢境紀錄。請先回到大廳並記錄新的夢境。</p>
+                {% endif %}
+            {% else %}
+                <p>{{ message or '您尚未登入，無法檢視夢境資料。' }}</p>
+            {% endif %}
+        </section>
+      </div>
+    </main>
+
+    <script>
+        // Settings 面板控制
+        const settingsToggle = document.getElementById('settings-toggle');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+
+        settingsToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            settingsModal.style.display = 'flex';
+            settingsModal.style.opacity = '1';
+            settingsModal.style.visibility = 'visible';
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.style.opacity = '0';
+            settingsModal.style.visibility = 'hidden';
+            setTimeout(() => {
+                settingsModal.style.display = 'none';
+            }, 350);
+        });
+
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                closeSettingsBtn.click();
+            }
+        });
+
+        // 背景音樂控制
+        const toggleMusic = document.getElementById('toggle-music');
+        const bgMusic = document.getElementById('bg-music');
+
+        if (toggleMusic && bgMusic) {
+            toggleMusic.addEventListener('change', () => {
+                if (toggleMusic.checked) {
+                    bgMusic.play().catch(err => console.log('音訊播放失敗:', err));
+                } else {
+                    bgMusic.pause();
+                }
+            });
+        }
+        function sortDreams(order) {
+        const container = document.getElementById('dream-list-container');
+        const cards = Array.from(container.querySelectorAll('article.dream-card'));
+
+        cards.sort((a, b) => {
+            const timeA = new Date(a.querySelector('.dream-time').textContent.trim());
+            const timeB = new Date(b.querySelector('.dream-time').textContent.trim());
+            return order === 'new' ? timeB - timeA : timeA - timeB;
+        });
+
+        cards.forEach(card => container.appendChild(card));
+    }
+    </script>
+    <div id="image-lightbox" class="image-lightbox">
+      <img id="lightbox-image" src="" alt="放大夢境記憶照片" />
+    </div>
+    <div id="aurora-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
+    <div id="meteor-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
+    <script src="{{ url_for('static', filename='shared-dream-effects.js') }}"></script>
+</body>
+</html>

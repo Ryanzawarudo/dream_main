@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>踩地雷小遊戲</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <h1>踩地雷小遊戲</h1>
+
+    <div class="menu" id="sizeMenu">
+      <p>選擇地圖大小：</p>
+      <div class="size-buttons">
+        <button data-rows="6" data-cols="6">小 (6x6)</button>
+        <button data-rows="9" data-cols="9">中 (9x9)</button>
+        <button data-rows="12" data-cols="12">大 (12x12)</button>
+      </div>
+    </div>
+
+    <div class="board-wrapper hidden" id="boardWrapper">
+      <div class="board" id="board"></div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <div>左鍵揭開格子</div>
+    <div>右鍵插旗 / 問號 / 取消</div>
+  </div>
+
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal">
+      <h2 id="resultTitle">🎉 勝利！</h2>
+      <p id="resultDetail">恭喜你完成掃雷。</p>
+      <button id="restartButton">再玩一次</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
