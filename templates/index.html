@@ -4,133 +4,492 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夢境觀測</title>
+    <title>Subconscious Observation System</title>
 </head>
 <body>
-    <div id="topAuthArea" class="top-auth-area">
-        <span id="topUserName" class="top-user-name"></span>
-        <button id="topLoginButton" class="top-login-button">登入</button>
-    </div>
+
+    <!-- 神經網絡 Canvas 背景 -->
+    <canvas id="neural-canvas" aria-hidden="true"></canvas>
+
+    <!-- 星點背景 -->
+    <div id="star-layer" aria-hidden="true"></div>
+
+    <!-- 環境光球 -->
+    <div class="ambient-orb one" aria-hidden="true"></div>
+    <div class="ambient-orb two" aria-hidden="true"></div>
+    <div class="ambient-orb three" aria-hidden="true"></div>
+
+    <!-- 六芒星水印 -->
+    <svg class="sigil-bg" viewBox="0 0 200 200" aria-hidden="true">
+        <polygon points="100,10 190,155 10,155" fill="none" stroke="rgba(155,120,255,1)" stroke-width="0.8"/>
+        <polygon points="100,190 10,45 190,45" fill="none" stroke="rgba(155,120,255,1)" stroke-width="0.8"/>
+        <circle cx="100" cy="100" r="82" fill="none" stroke="rgba(123,220,255,.7)" stroke-width="0.6"/>
+        <circle cx="100" cy="100" r="54" fill="none" stroke="rgba(155,120,255,.5)" stroke-width="0.5" stroke-dasharray="4 3"/>
+        <circle cx="100" cy="100" r="28" fill="none" stroke="rgba(155,120,255,.3)" stroke-width="0.5"/>
+    </svg>
+
+    <!-- 頂部導航列 -->
+    <header class="top-navbar" role="banner">
+        <a href="/" class="nav-logo" aria-label="回到首頁">
+            <svg class="nav-logo-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <polygon points="12,2 22,19 2,19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <polygon points="12,22 2,5 22,5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-logo-text">DREAM</span>
+            <span class="nav-logo-sub">潛意識觀測系統</span>
+        </a>
+        <nav class="nav-links" aria-label="主要導航">
+            <a href="/weaver" class="nav-link">夢境編織室</a>
+            <a href="/data" class="nav-link">心靈數據室</a>
+            <a href="/capsule" class="nav-link">情緒圖表</a>
+        </nav>
+        <div id="topAuthArea" class="top-auth-area" role="navigation" aria-label="帳號管理">
+            <span id="topUserName" class="top-user-name" aria-live="polite">訪客模式</span>
+            <button id="topLoginButton" class="top-login-button" aria-label="登入帳號">登入</button>
+        </div>
+    </header>
+
+    <!-- 頁尾 -->
+    <footer class="site-footer" aria-label="頁尾資訊">
+        <div class="footer-inner">
+            <span class="footer-logo">⬡ DREAM</span>
+            <span class="footer-sep">·</span>
+            <span>Subconscious Observation System</span>
+            <span class="footer-sep">·</span>
+            <span>v2.0</span>
+            <span class="footer-sep">·</span>
+            <a href="#" class="footer-link">隱私政策</a>
+            <span class="footer-sep">·</span>
+            <a href="#" class="footer-link">聯絡我們</a>
+        </div>
+    </footer>
+
     <main class="content">
-        <section id="hall" class="panel active">
-            <h2>觀測大廳</h2>
-            <p>在這裡觀察夢境的全貌，查看最新的夢境指標、事件與能量流動。</p>
-            <div class="action-grid">
-                <a href="/weaver" class="action-button" style="text-decoration: none; display: inline-block; text-align: center;">開啟今日夢境紀錄</a>
-                <button class="action-button" data-target="subconscious">進入心靈數據室</button>
-                <a href="/capsule" class="action-button" style="text-decoration: none; display: inline-block; text-align: center;">所有夢境的情緒圖表統整</a>
-                <button id="inspireBtn" class="action-button-secondary">隨機靈感投遞</button>
-            </div>
-            <div id="inspirationOutput" class="inspiration-box">按下「隨機靈感投遞」來獲取夢境關鍵詞組合。</div>
-        </section>
-        <section id="weaving" class="panel">
-            <h2>夢境編織室</h2>
-            <p>透過直覺與符號，編織夢境場景與意象，讓創造力自由流動。</p>
-        </section>
-        <section id="subconscious" class="panel">
-            <h2>潛意識觀測室</h2>
-            <p>深入潛意識深層，解析夢境碎片與內在訊息。</p>
-        </section>
-        <section id="capsule" class="panel">
-            <h2>時空膠囊封存室</h2>
-            <p>將重要夢境記錄存入時空膠囊，以便未來回顧與再探索。</p>
-        </section>
 
-        <section id="page-login" class="panel">
-            <div class="auth-panel">
-                <h2>登入 Subconscious Observation System</h2>
-                <p class="form-note">使用 Email 與密碼登入。</p>
-                <form id="loginForm" class="auth-form">
-                    <div class="form-field">
-                        <label for="loginEmail">Email</label>
-                        <input id="loginEmail" name="email" type="email" autocomplete="username" required>
+        <!-- ===== 大廳 ===== -->
+        <section id="hall" class="panel active visible" aria-label="主頁大廳">
+            <div class="hall-wrap">
+
+                <!-- 登入後顯示的 Dashboard 資訊條 -->
+                <div id="dashboardBar" class="dashboard-bar" style="display:none;" aria-live="polite">
+                    <div class="db-item">
+                        <span class="db-icon">👤</span>
+                        <span id="dbUsername" class="db-label"></span>
                     </div>
-                    <div class="form-field">
-                        <label for="loginPassword">Password</label>
-                        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+                    <div class="db-divider"></div>
+                    <div class="db-item">
+                        <span class="db-icon">🌙</span>
+                        <span id="dbDreamCount" class="db-label">載入中…</span>
                     </div>
-                    <button type="submit" class="primary-button">Log In</button>
-                    <div id="loginMessage" class="validation-message"></div>
-                </form>
-                <div class="auth-footer">
-                    <a href="#signup" class="auth-link">Create Account</a>
-                    <a href="#forgot" class="auth-link">Forgot Password?</a>
+                    <div class="db-divider"></div>
+                    <div class="db-item">
+                        <span class="db-icon">📅</span>
+                        <span id="dbLastDate" class="db-label">—</span>
+                    </div>
                 </div>
-            </div>
-        </section>
 
-        <section id="page-signup" class="panel">
-            <div class="auth-panel">
-                <h2>建立新帳號</h2>
-                <p class="form-note">帳號將用於存取 Subconscious Observation System。</p>
-                <form id="signupForm" class="auth-form">
-                    <div class="form-field">
-                        <label for="signupUsername">Username</label>
-                        <input id="signupUsername" name="username" type="text" autocomplete="username" required>
-                    </div>
-                    <div class="form-field">
-                        <label for="signupEmail">Email</label>
-                        <input id="signupEmail" name="email" type="email" autocomplete="email" required>
-                    </div>
-                    <div class="form-field">
-                        <label for="signupPassword">Password</label>
-                        <input id="signupPassword" name="password" type="password" autocomplete="new-password" required>
-                    </div>
-                    <div class="form-field">
-                        <label for="signupConfirmPassword">Confirm Password</label>
-                        <input id="signupConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
-                    </div>
-                    <div id="signupValidation" class="validation-message"></div>
-                    <button id="signupButton" type="submit" class="primary-button">Create Account</button>
-                    <div id="signupMessage" class="validation-message"></div>
-                </form>
-                <div class="auth-footer">
-                    <a href="#login" class="auth-link">Back to Login</a>
+                <div class="hall-eyebrow" aria-hidden="true">
+                    <div class="eyebrow-dot"></div>
+                    Subconscious Observation System
                 </div>
-            </div>
-        </section>
 
-        <section id="page-forgot" class="panel">
-            <div class="auth-panel">
-                <h2>重設密碼</h2>
-                <p class="form-note">輸入註冊 Email 以接收驗證碼。</p>
-                <div id="forgotStage1" class="forgot-stage active">
-                    <form id="forgotEmailForm" class="auth-form">
-                        <div class="form-field">
-                            <label for="forgotEmail">Email</label>
-                            <input id="forgotEmail" name="email" type="email" autocomplete="email" required>
+                <h1 class="hall-title">進入你的<br><span>夢境觀測站</span></h1>
+                <p class="hall-sub">記錄、解析、探索潛意識深處的訊號與符號</p>
+
+                <div class="title-deco" aria-hidden="true">
+                    <div class="dl"></div>
+                    <div class="dgem"></div>
+                    <div class="dr"></div>
+                </div>
+
+                <div class="action-grid" role="list">
+
+                    <!-- 夢境編織室 -->
+                    <a href="/weaver" class="action-card c-purple" role="listitem">
+                        <span class="card-tag">Dream · Log</span>
+                        <div class="card-icon" aria-hidden="true">🌙</div>
+                        <div class="card-title">夢境編織室</div>
+                        <div class="card-desc">記錄今日夢境，由 AI 解析潛意識符號與情緒脈絡</div>
+                        <div class="card-footer">
+                            <span class="card-badge">AI 解析</span>
+                            <span class="card-arrow" aria-hidden="true">↗</span>
                         </div>
-                        <button id="sendCodeButton" type="button" class="primary-button">Send Verification Code</button>
-                        <div id="forgotEmailMessage" class="validation-message"></div>
+                    </a>
+
+                    <!-- 心靈數據室 -->
+                    <a href="/data" class="action-card c-cyan" role="listitem">
+                        <span class="card-tag">Data · Archive</span>
+                        <div class="card-icon" aria-hidden="true">🔬</div>
+                        <div class="card-title">心靈數據室</div>
+                        <div class="card-desc">瀏覽過往所有夢境紀錄，回溯潛意識的軌跡</div>
+                        <div class="card-footer">
+                            <span class="card-badge">歷史紀錄</span>
+                            <span class="card-arrow" aria-hidden="true">↗</span>
+                        </div>
+                    </a>
+
+                    <!-- 情緒輪廓圖表 -->
+                    <a href="/capsule" class="action-card c-pink" role="listitem">
+                        <span class="card-tag">Emotion · Map</span>
+                        <div class="card-icon" aria-hidden="true">📡</div>
+                        <div class="card-title">情緒輪廓圖表</div>
+                        <div class="card-desc">視覺化統整所有夢境的情緒分佈，找出潛在模式</div>
+                        <div class="card-footer">
+                            <span class="card-badge">視覺分析</span>
+                            <span class="card-arrow" aria-hidden="true">↗</span>
+                        </div>
+                    </a>
+
+                    <!-- 隨機靈感投遞 -->
+                    <button
+                        id="inspireBtn"
+                        class="action-card c-gold"
+                        role="listitem"
+                        aria-label="點擊獲取隨機夢境靈感"
+                    >
+                        <span class="card-tag">Spark · Random</span>
+                        <div class="card-icon" aria-hidden="true">✨</div>
+                        <div class="card-title">隨機靈感投遞</div>
+                        <div class="card-desc">隨機組合夢境關鍵詞，喚醒今日記錄的靈感</div>
+                        <div class="card-footer">
+                            <span class="card-badge">即時生成</span>
+                            <span class="card-arrow" aria-hidden="true">→</span>
+                        </div>
+                    </button>
+
+                </div>
+
+                <!-- 靈感輸出 -->
+                <div
+                    id="inspirationOutput"
+                    class="inspiration-box"
+                    role="status"
+                    aria-live="polite"
+                    aria-label="靈感輸出區"
+                >
+                    點擊「隨機靈感投遞」，獲取今日夢境書寫的起點。
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ===== 登入頁面 ===== -->
+        <section id="page-login" class="panel" aria-label="登入系統">
+            <div class="auth-wrap">
+                <div class="auth-panel">
+                    <div class="auth-panel-eyebrow">Subconscious Observation System</div>
+                    <h2>登入系統</h2>
+                    <div class="auth-divider"></div>
+                    <p class="form-note">使用 Email 與密碼登入，繼續你的潛意識探索。</p>
+                    <form id="loginForm" class="auth-form" novalidate>
+                        <div class="form-field">
+                            <label for="loginEmail">Email</label>
+                            <input
+                                id="loginEmail"
+                                name="email"
+                                type="email"
+                                autocomplete="username"
+                                placeholder="your@email.com"
+                                required
+                            >
+                        </div>
+                        <div class="form-field">
+                            <label for="loginPassword">Password</label>
+                            <input
+                                id="loginPassword"
+                                name="password"
+                                type="password"
+                                autocomplete="current-password"
+                                placeholder="••••••••"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="primary-button">進入系統</button>
+                        <div id="loginMessage" class="validation-message" role="alert"></div>
                     </form>
-                </div>
-                <div id="forgotStage2" class="forgot-stage">
-                    <form id="resetPasswordForm" class="auth-form">
-                        <div class="form-field">
-                            <label for="verificationCode">6-Digit Verification Code</label>
-                            <input id="verificationCode" name="code" type="text" inputmode="numeric" pattern="\d{6}" required>
-                        </div>
-                        <div class="form-field">
-                            <label for="newPassword">New Password</label>
-                            <input id="newPassword" name="password" type="password" autocomplete="new-password" required>
-                        </div>
-                        <div class="form-field">
-                            <label for="confirmNewPassword">Confirm New Password</label>
-                            <input id="confirmNewPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
-                        </div>
-                        <div id="resetValidation" class="validation-message"></div>
-                        <button id="resetPasswordButton" type="submit" class="primary-button">Reset Password</button>
-                        <div id="resetPasswordMessage" class="validation-message"></div>
-                    </form>
-                </div>
-                <div class="auth-footer">
-                    <a href="#login" class="auth-link">Back to Login</a>
+                    <div class="auth-footer">
+                        <a href="#signup" class="auth-link">建立新帳號</a>
+                        <a href="#forgot" class="auth-link">忘記密碼？</a>
+                    </div>
                 </div>
             </div>
         </section>
+
+        <!-- ===== 註冊頁面 ===== -->
+        <section id="page-signup" class="panel" aria-label="建立新帳號">
+            <div class="auth-wrap">
+                <div class="auth-panel">
+                    <div class="auth-panel-eyebrow">Subconscious Observation System</div>
+                    <h2>建立新帳號</h2>
+                    <div class="auth-divider"></div>
+                    <p class="form-note">帳號將用於存取 Subconscious Observation System。</p>
+                    <form id="signupForm" class="auth-form" novalidate>
+                        <div class="form-field">
+                            <label for="signupUsername">Username</label>
+                            <input
+                                id="signupUsername"
+                                name="username"
+                                type="text"
+                                autocomplete="username"
+                                placeholder="dreamwalker"
+                                required
+                            >
+                        </div>
+                        <div class="form-field">
+                            <label for="signupEmail">Email</label>
+                            <input
+                                id="signupEmail"
+                                name="email"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="your@email.com"
+                                required
+                            >
+                        </div>
+                        <div class="form-field">
+                            <label for="signupPassword">Password</label>
+                            <input
+                                id="signupPassword"
+                                name="password"
+                                type="password"
+                                autocomplete="new-password"
+                                placeholder="至少 8 個字元"
+                                required
+                            >
+                        </div>
+                        <div class="form-field">
+                            <label for="signupConfirmPassword">Confirm Password</label>
+                            <input
+                                id="signupConfirmPassword"
+                                name="confirmPassword"
+                                type="password"
+                                autocomplete="new-password"
+                                placeholder="再次輸入密碼"
+                                required
+                            >
+                        </div>
+                        <div id="signupValidation" class="validation-message" role="alert"></div>
+                        <button id="signupButton" type="submit" class="primary-button">建立帳號</button>
+                        <div id="signupMessage" class="validation-message" role="alert"></div>
+                    </form>
+                    <div class="auth-footer">
+                        <a href="#login" class="auth-link">← 返回登入</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 忘記密碼頁面 ===== -->
+        <section id="page-forgot" class="panel" aria-label="重設密碼">
+            <div class="auth-wrap">
+                <div class="auth-panel">
+                    <div class="auth-panel-eyebrow">Subconscious Observation System</div>
+                    <h2>重設密碼</h2>
+                    <div class="auth-divider"></div>
+
+                    <div id="forgotStage1" class="forgot-stage active">
+                        <p class="form-note">輸入註冊 Email，我們將寄送驗證碼至你的信箱。</p>
+                        <form id="forgotEmailForm" class="auth-form" novalidate>
+                            <div class="form-field">
+                                <label for="forgotEmail">Email</label>
+                                <input
+                                    id="forgotEmail"
+                                    name="email"
+                                    type="email"
+                                    autocomplete="email"
+                                    placeholder="your@email.com"
+                                    required
+                                >
+                            </div>
+                            <button id="sendCodeButton" type="button" class="primary-button">寄送驗證碼</button>
+                            <div id="forgotEmailMessage" class="validation-message" role="alert"></div>
+                        </form>
+                    </div>
+
+                    <div id="forgotStage2" class="forgot-stage">
+                        <p class="form-note">請輸入信箱中的 6 位數驗證碼，並設定新密碼。</p>
+                        <form id="resetPasswordForm" class="auth-form" novalidate>
+                            <div class="form-field">
+                                <label for="verificationCode">驗證碼（6 位數）</label>
+                                <input
+                                    id="verificationCode"
+                                    name="code"
+                                    type="text"
+                                    inputmode="numeric"
+                                    pattern="\d{6}"
+                                    placeholder="123456"
+                                    maxlength="6"
+                                    required
+                                >
+                            </div>
+                            <div class="form-field">
+                                <label for="newPassword">新密碼</label>
+                                <input
+                                    id="newPassword"
+                                    name="password"
+                                    type="password"
+                                    autocomplete="new-password"
+                                    placeholder="至少 8 個字元"
+                                    required
+                                >
+                            </div>
+                            <div class="form-field">
+                                <label for="confirmNewPassword">確認新密碼</label>
+                                <input
+                                    id="confirmNewPassword"
+                                    name="confirmPassword"
+                                    type="password"
+                                    autocomplete="new-password"
+                                    placeholder="再次輸入新密碼"
+                                    required
+                                >
+                            </div>
+                            <div id="resetValidation" class="validation-message" role="alert"></div>
+                            <button id="resetPasswordButton" type="submit" class="primary-button">確認重設密碼</button>
+                            <div id="resetPasswordMessage" class="validation-message" role="alert"></div>
+                        </form>
+                    </div>
+
+                    <div class="auth-footer">
+                        <a href="#login" class="auth-link">← 返回登入</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <script>
+        /* ===== 神經網絡動畫 ===== */
+        (function () {
+            const canvas = document.getElementById('neural-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const NODE_COUNT = 55;
+            const LINK_DIST = 160;
+            const PULSE_INTERVAL = 2800;
+            let nodes = [], pulses = [], W, H, raf;
+
+            function resize() {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+            }
+
+            function initNodes() {
+                nodes = [];
+                for (let i = 0; i < NODE_COUNT; i++) {
+                    nodes.push({
+                        x: Math.random() * W,
+                        y: Math.random() * H,
+                        vx: (Math.random() - 0.5) * 0.28,
+                        vy: (Math.random() - 0.5) * 0.28,
+                        r: Math.random() * 1.4 + 0.6
+                    });
+                }
+            }
+
+            function spawnPulse() {
+                const i = Math.floor(Math.random() * nodes.length);
+                const a = nodes[i];
+                // 找 a 的鄰居
+                const neighbors = nodes.filter((b, j) => j !== i && dist(a, b) < LINK_DIST);
+                if (neighbors.length === 0) return;
+                const b = neighbors[Math.floor(Math.random() * neighbors.length)];
+                pulses.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, t: 0 });
+            }
+
+            function dist(a, b) {
+                return Math.hypot(a.x - b.x, a.y - b.y);
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+
+                // 畫連線
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const d = dist(nodes[i], nodes[j]);
+                        if (d < LINK_DIST) {
+                            const alpha = (1 - d / LINK_DIST) * 0.12;
+                            ctx.beginPath();
+                            ctx.moveTo(nodes[i].x, nodes[i].y);
+                            ctx.lineTo(nodes[j].x, nodes[j].y);
+                            ctx.strokeStyle = `rgba(155,120,255,${alpha})`;
+                            ctx.lineWidth = 0.6;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // 畫節點
+                nodes.forEach(n => {
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(180,150,255,0.35)';
+                    ctx.fill();
+                });
+
+                // 畫脈衝
+                pulses = pulses.filter(p => p.t <= 1);
+                pulses.forEach(p => {
+                    p.t += 0.012;
+                    const px = p.ax + (p.bx - p.ax) * p.t;
+                    const py = p.ay + (p.by - p.ay) * p.t;
+                    const alpha = Math.sin(p.t * Math.PI) * 0.75;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(123,220,255,${alpha})`;
+                    ctx.fill();
+                    // 光暈
+                    const grd = ctx.createRadialGradient(px, py, 0, px, py, 10);
+                    grd.addColorStop(0, `rgba(123,220,255,${alpha * 0.4})`);
+                    grd.addColorStop(1, 'rgba(123,220,255,0)');
+                    ctx.beginPath();
+                    ctx.arc(px, py, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = grd;
+                    ctx.fill();
+                });
+
+                // 更新節點位置
+                nodes.forEach(n => {
+                    n.x += n.vx; n.y += n.vy;
+                    if (n.x < 0 || n.x > W) n.vx *= -1;
+                    if (n.y < 0 || n.y > H) n.vy *= -1;
+                });
+
+                raf = requestAnimationFrame(draw);
+            }
+
+            resize();
+            initNodes();
+            draw();
+            setInterval(spawnPulse, PULSE_INTERVAL);
+            window.addEventListener('resize', () => { resize(); initNodes(); });
+        })();
+
+        /* ===== 星點生成 ===== */
+        (function () {
+            const layer = document.getElementById('star-layer');
+            if (!layer) return;
+
+            for (let i = 0; i < 65; i++) {
+                const s = document.createElement('div');
+                s.className = 'st';
+                const sz = Math.random() * 1.6 + 0.5;
+                s.style.cssText = [
+                    `width:${sz}px`,
+                    `height:${sz}px`,
+                    `left:${Math.random() * 100}%`,
+                    `top:${Math.random() * 100}%`,
+                    `--peak:${0.25 + Math.random() * 0.5}`,
+                    `animation-duration:${2.8 + Math.random() * 5}s`,
+                    `animation-delay:-${Math.random() * 8}s`
+                ].join(';');
+                layer.appendChild(s);
+            }
+        })();
+
+        /* ===== 應用程式邏輯 ===== */
         const API_BASE = '/api';
         let currentUser = null;
 
@@ -138,51 +497,126 @@
             try {
                 const response = await fetch(`${API_BASE}/session`, { method: 'GET' });
                 const result = await response.json();
-                currentUser = result.success ? result.user : null;
+                currentUser = (result.success && result.user) ? result.user : null;
             } catch (e) {
                 currentUser = null;
             }
-
-            if (!currentUser) {
-                localStorage.removeItem('currentUser');
-            }
             updateTopButton();
+            updateDashboard();
         }
-        
-        const dreamKeywords = [
-            '月光軌跡',
-            '星辰裂縫',
-            '水晶迷宮',
-            '記憶碎片',
-            '幽夜花園',
-            '風之回廊',
-            '時間漩渦',
-            '深海心聲',
-            '銀色羽翼',
-            '幻影之門'
-        ];
 
-        const inspireBtn = document.getElementById('inspireBtn');
-        const inspirationOutput = document.getElementById('inspirationOutput');
+        /* Dashboard 資訊條（登入後顯示） */
+        async function updateDashboard() {
+            const bar = document.getElementById('dashboardBar');
+            if (!bar) return;
+            if (!currentUser) { bar.style.display = 'none'; return; }
+
+            document.getElementById('dbUsername').textContent = currentUser.username || currentUser.email;
+            bar.style.display = 'flex';
+
+            try {
+                const res = await fetch(`${API_BASE}/emotion-data`);
+                const data = await res.json();
+                if (data.success) {
+                    const mapping = data.mapping || {};
+                    // 用 snippet 去重：同一則夢可能出現在多個情緒 key 下，要避免重複計數
+                    const seen = new Set();
+                    let latestDate = null;
+                    Object.values(mapping).forEach(list => {
+                        list.forEach(d => {
+                            const key = `${d.date}|${d.snippet}`;
+                            if (!seen.has(key)) {
+                                seen.add(key);
+                                if (d.date && (!latestDate || d.date > latestDate)) {
+                                    latestDate = d.date;
+                                }
+                            }
+                        });
+                    });
+                    const count = seen.size;
+                    document.getElementById('dbDreamCount').textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
+                    document.getElementById('dbLastDate').textContent = latestDate ? `最近：${latestDate}` : '—';
+                }
+            } catch(e) {
+                document.getElementById('dbDreamCount').textContent = '前往心靈數據室查看';
+                document.getElementById('dbLastDate').textContent = '—';
+            }
+        }
+
+        /* 靈感關鍵詞庫 */
+        const dreamKeywords = [
+            '月光軌跡', '星辰裂縫', '水晶迷宮', '記憶碎片', '幽夜花園',
+            '風之回廊', '時間漩渦', '深海心聲', '銀色羽翼', '幻影之門',
+            '鏡中倒影', '迷失燈塔', '雨後森林', '未竟之夢', '消失的橋'
+        ];
 
         function getRandomKeywords(count) {
             const selected = [];
             const pool = [...dreamKeywords];
             while (selected.length < count && pool.length > 0) {
-                const index = Math.floor(Math.random() * pool.length);
-                selected.push(pool.splice(index, 1)[0]);
+                const idx = Math.floor(Math.random() * pool.length);
+                selected.push(pool.splice(idx, 1)[0]);
             }
             return selected;
         }
 
-        inspireBtn.addEventListener('click', () => {
+        /* 靈感投遞 — 打字機效果 */
+        let typewriterTimer = null;
+
+        function typewrite(element, text, speed = 42) {
+            // 清掉上一次未完成的動畫
+            if (typewriterTimer) clearTimeout(typewriterTimer);
+            element.textContent = '';
+            element.classList.add('active');
+
+            // 加上閃爍游標
+            element.classList.add('typing');
+
+            let i = 0;
+            function tick() {
+                if (i < text.length) {
+                    element.textContent += text[i];
+                    i++;
+                    // 標點符號停頓久一點，讓節奏有呼吸感
+                    const ch = text[i - 1];
+                    const pause = /[，。、—！？「」]/.test(ch) ? speed * 4 : speed;
+                    typewriterTimer = setTimeout(tick, pause);
+                } else {
+                    // 打完後移除游標
+                    element.classList.remove('typing');
+                }
+            }
+            tick();
+        }
+
+        document.getElementById('inspireBtn').addEventListener('click', () => {
+            const box = document.getElementById('inspirationOutput');
             const keywords = getRandomKeywords(3);
-            inspirationOutput.textContent = `夢境靈感：${keywords.join(' / ')}`;
+            const prompts = [
+                `今晚，試著寫下「${keywords.join('」、「')}」——讓意識自由流動。`,
+                `夢境提示：${keywords.join(' ／ ')}。你在其中看見了什麼？`,
+                `以「${keywords[0]}」為起點，穿越「${keywords[1]}」，抵達「${keywords[2]}」。`
+            ];
+            const text = prompts[Math.floor(Math.random() * prompts.length)];
+            typewrite(box, text);
         });
 
+        /* 頁面路由（含過場動畫）*/
         function showPage(pageId) {
-            document.querySelectorAll('.panel').forEach((panel) => {
-                panel.classList.toggle('active', panel.id === pageId);
+            document.querySelectorAll('.panel').forEach(p => {
+                if (p.id === pageId) {
+                    p.classList.add('active', 'fade-enter');
+                    p.classList.remove('visible');
+                    // reflow 後移除 fade-enter，觸發 transition
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            p.classList.remove('fade-enter');
+                            p.classList.add('visible');
+                        });
+                    });
+                } else {
+                    p.classList.remove('active', 'visible', 'fade-enter');
+                }
             });
         }
 
@@ -191,48 +625,50 @@
             const allowed = ['login', 'signup', 'forgot'];
             if (allowed.includes(hash)) {
                 showPage(`page-${hash}`);
-                if (hash === 'forgot') {
-                    showForgotStage(1);
-                }
+                if (hash === 'forgot') showForgotStage(1);
                 return;
             }
             showPage('hall');
         }
 
+        /* 訊息提示 */
         function setValidationMessage(element, text, success = false) {
             element.textContent = text;
-            element.className = `validation-message ${success ? 'success' : 'error'}`;
+            element.className = `validation-message ${success ? 'success' : ''}`;
         }
 
+        /* 登入 */
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const messageEl = document.getElementById('loginMessage');
-
             if (!email || !password) {
                 setValidationMessage(messageEl, '請輸入 Email 與密碼。');
                 return;
             }
-
-            const response = await fetch(`${API_BASE}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                setValidationMessage(messageEl, '登入成功，正在進入系統...', true);
-                currentUser = { email, username: result.user?.username || '' };
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                updateTopButton();
-                window.location.hash = '';
-            } else {
-                setValidationMessage(messageEl, result.message || '登入失敗，請檢查帳號密碼。');
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    setValidationMessage(messageEl, '登入成功，正在進入系統⋯', true);
+                    currentUser = result.user;
+                    updateTopButton();
+                    updateDashboard();
+                    window.location.hash = '';
+                } else {
+                    setValidationMessage(messageEl, result.message || '登入失敗，請檢查帳號密碼。');
+                }
+            } catch (e) {
+                setValidationMessage(messageEl, '網路錯誤，請稍後重試。');
             }
         }
 
+        /* 註冊 */
         async function handleSignup(event) {
             event.preventDefault();
             const username = document.getElementById('signupUsername').value.trim();
@@ -241,7 +677,6 @@
             const confirmPassword = document.getElementById('signupConfirmPassword').value;
             const messageEl = document.getElementById('signupMessage');
             const validationEl = document.getElementById('signupValidation');
-
             if (!username || !email || !password || !confirmPassword) {
                 setValidationMessage(messageEl, '請完整填寫所有欄位。');
                 return;
@@ -250,52 +685,57 @@
                 setValidationMessage(validationEl, '密碼與確認密碼不一致。');
                 return;
             }
-
-            const response = await fetch(`${API_BASE}/signup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password, confirmPassword })
-            });
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                setValidationMessage(messageEl, '帳號建立完成，請登入。', true);
-                window.location.hash = 'login';
-            } else {
-                setValidationMessage(messageEl, result.message || '註冊失敗，請重試。');
+            try {
+                const response = await fetch(`${API_BASE}/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, confirmPassword })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    setValidationMessage(messageEl, '帳號建立完成，請登入。', true);
+                    setTimeout(() => { window.location.hash = 'login'; }, 1000);
+                } else {
+                    setValidationMessage(messageEl, result.message || '註冊失敗，請重試。');
+                }
+            } catch (e) {
+                setValidationMessage(messageEl, '網路錯誤，請稍後重試。');
             }
         }
 
+        /* 寄送驗證碼 */
         async function sendVerificationCode() {
             const email = document.getElementById('forgotEmail').value.trim();
             const messageEl = document.getElementById('forgotEmailMessage');
-
             if (!email) {
                 setValidationMessage(messageEl, '請輸入註冊 Email。');
                 return;
             }
-
-            const response = await fetch(`${API_BASE}/forgot-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                setValidationMessage(messageEl, '驗證碼已寄出，請檢查信箱。', true);
-                showForgotStage(2);
-            } else {
-                setValidationMessage(messageEl, result.message || '無法寄送驗證碼。');
+            try {
+                const response = await fetch(`${API_BASE}/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    setValidationMessage(messageEl, '驗證碼已寄出，請檢查信箱。', true);
+                    setTimeout(() => showForgotStage(2), 800);
+                } else {
+                    setValidationMessage(messageEl, result.message || '無法寄送驗證碼。');
+                }
+            } catch (e) {
+                setValidationMessage(messageEl, '網路錯誤，請稍後重試。');
             }
         }
 
         function showForgotStage(stage) {
-            document.querySelectorAll('.forgot-stage').forEach((section, index) => {
-                section.classList.toggle('active', index + 1 === stage);
+            document.querySelectorAll('.forgot-stage').forEach((s, i) => {
+                s.classList.toggle('active', i + 1 === stage);
             });
         }
 
+        /* 重設密碼 */
         async function handleResetPassword(event) {
             event.preventDefault();
             const email = document.getElementById('forgotEmail').value.trim();
@@ -304,7 +744,6 @@
             const confirmPassword = document.getElementById('confirmNewPassword').value;
             const messageEl = document.getElementById('resetPasswordMessage');
             const validationEl = document.getElementById('resetValidation');
-
             if (!code || !password || !confirmPassword) {
                 setValidationMessage(messageEl, '請填寫所有重設欄位。');
                 return;
@@ -313,118 +752,95 @@
                 setValidationMessage(validationEl, '新密碼與確認密碼不一致。');
                 return;
             }
-
-            const response = await fetch(`${API_BASE}/reset-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, code, password })
-            });
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                setValidationMessage(messageEl, '密碼重設成功，請重新登入。', true);
-                window.location.hash = 'login';
-            } else {
-                setValidationMessage(messageEl, result.message || '重設失敗，請確認驗證碼與密碼。');
+            try {
+                const response = await fetch(`${API_BASE}/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code, password })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    setValidationMessage(messageEl, '密碼重設成功，請重新登入。', true);
+                    setTimeout(() => { window.location.hash = 'login'; }, 1000);
+                } else {
+                    setValidationMessage(messageEl, result.message || '重設失敗，請確認驗證碼。');
+                }
+            } catch (e) {
+                setValidationMessage(messageEl, '網路錯誤，請稍後重試。');
             }
         }
 
+        /* 即時密碼驗證 */
         function setupPasswordMatchValidation() {
-            const passwordField = document.getElementById('signupPassword');
-            const confirmField = document.getElementById('signupConfirmPassword');
-            const validationEl = document.getElementById('signupValidation');
-
-            const checkMatch = () => {
-                if (!passwordField.value || !confirmField.value) {
-                    validationEl.textContent = '';
-                    return;
-                }
-                if (passwordField.value === confirmField.value) {
-                    setValidationMessage(validationEl, '密碼一致。', true);
-                } else {
-                    setValidationMessage(validationEl, '密碼不一致。');
-                }
+            const pw = document.getElementById('signupPassword');
+            const cpw = document.getElementById('signupConfirmPassword');
+            const el = document.getElementById('signupValidation');
+            const check = () => {
+                if (!pw.value || !cpw.value) { el.textContent = ''; return; }
+                pw.value === cpw.value
+                    ? setValidationMessage(el, '✓ 密碼一致', true)
+                    : setValidationMessage(el, '密碼不一致');
             };
-
-            passwordField.addEventListener('input', checkMatch);
-            confirmField.addEventListener('input', checkMatch);
+            pw.addEventListener('input', check);
+            cpw.addEventListener('input', check);
         }
 
         function setupForgotPasswordValidation() {
-            const newPassword = document.getElementById('newPassword');
-            const confirmNewPassword = document.getElementById('confirmNewPassword');
-            const validationEl = document.getElementById('resetValidation');
-
-            const checkMatch = () => {
-                if (!newPassword.value || !confirmNewPassword.value) {
-                    validationEl.textContent = '';
-                    return;
-                }
-                if (newPassword.value === confirmNewPassword.value) {
-                    setValidationMessage(validationEl, '新密碼一致。', true);
-                } else {
-                    setValidationMessage(validationEl, '新密碼不一致。');
-                }
+            const npw = document.getElementById('newPassword');
+            const cnpw = document.getElementById('confirmNewPassword');
+            const el = document.getElementById('resetValidation');
+            const check = () => {
+                if (!npw.value || !cnpw.value) { el.textContent = ''; return; }
+                npw.value === cnpw.value
+                    ? setValidationMessage(el, '✓ 新密碼一致', true)
+                    : setValidationMessage(el, '新密碼不一致');
             };
-
-            newPassword.addEventListener('input', checkMatch);
-            confirmNewPassword.addEventListener('input', checkMatch);
+            npw.addEventListener('input', check);
+            cnpw.addEventListener('input', check);
         }
 
+        /* 頂部按鈕 */
         function updateTopButton() {
             const button = document.getElementById('topLoginButton');
             const nameLabel = document.getElementById('topUserName');
+
             if (currentUser) {
+                nameLabel.textContent = currentUser.username ? `Hello, ${currentUser.username}` : '訪客模式';
                 button.textContent = '登出';
                 button.onclick = handleLogout;
-                nameLabel.textContent = currentUser.username ? `Hello, ${currentUser.username}` : '訪客模式';
             } else {
-                button.textContent = '登入';
-                button.onclick = () => {
-                    window.location.hash = 'login';
-                };
                 nameLabel.textContent = '訪客模式';
+                button.textContent = '登入';
+                button.onclick = () => { window.location.hash = 'login'; };
             }
         }
 
-        function setupSubconsciousButton() {
-            const button = document.querySelector('button[data-target="subconscious"]');
-            if (!button) return;
-            button.addEventListener('click', () => {
-                window.location.href = '/data';
-            });
-        }
-
+        /* 登出 */
         async function handleLogout() {
-            const confirmed = confirm('確實要登出嗎？');
-            if (!confirmed) return;
-
-            try {
-                await fetch(`${API_BASE}/logout`, { method: 'POST' });
-            } catch (e) {
-                // ignore network errors; still clear client state
-            }
-
-            localStorage.removeItem('currentUser');
+            if (!confirm('確實要登出嗎？')) return;
+            try { await fetch(`${API_BASE}/logout`, { method: 'POST' }); } catch (e) {}
             currentUser = null;
             updateTopButton();
             window.location.href = '/';
         }
 
+        /* 初始化 */
         document.addEventListener('DOMContentLoaded', async () => {
             await refreshSession();
             routeFromHash();
+
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
             document.getElementById('signupForm').addEventListener('submit', handleSignup);
-            document.getElementById('forgotEmailForm').addEventListener('submit', (event) => event.preventDefault());
+            document.getElementById('forgotEmailForm').addEventListener('submit', e => e.preventDefault());
             document.getElementById('sendCodeButton').addEventListener('click', sendVerificationCode);
             document.getElementById('resetPasswordForm').addEventListener('submit', handleResetPassword);
+
             setupPasswordMatchValidation();
             setupForgotPasswordValidation();
-            setupSubconsciousButton();
         });
 
         window.addEventListener('hashchange', routeFromHash);
     </script>
+
 </body>
 </html>
