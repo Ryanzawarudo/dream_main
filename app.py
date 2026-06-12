@@ -656,6 +656,149 @@ def check_music():
 def tetris_game():
     return send_from_directory('static/games/tetris', 'index.html')
 
+# ==================== 個人資料功能擴充（新增）====================
+# 功能：個人資料頁、大頭照上傳、bio 編輯
+# 需要在 app.py 末尾（if __name__ == '__main__': 之前）貼上此段
+
+import uuid
+from werkzeug.utils import secure_filename
+
+AVATAR_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'avatars')
+os.makedirs(AVATAR_FOLDER, exist_ok=True)
+
+ALLOWED_AVATAR_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_avatar_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_AVATAR_EXTENSIONS
+
+def ensure_profile_columns():
+    """確保 users 表有 bio 和 avatar_path 欄位（安全新增，不影響現有資料）"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('PRAGMA table_info(users)')
+    columns = [row[1] for row in cursor.fetchall()]
+    if 'bio' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN bio TEXT DEFAULT ''")
+    if 'avatar_path' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT DEFAULT ''")
+    conn.commit()
+    conn.close()
+
+ensure_profile_columns()
+
+
+@app.route('/profile', methods=['GET'])
+def profile_page():
+    """渲染個人資料頁面"""
+    user = session.get('user')
+    return render_template('profile.html', user=user)
+
+
+@app.route('/api/profile', methods=['GET'])
+def api_get_profile():
+    """取得當前登入使用者的個人資料"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify(success=False, message='請先登入'), 401
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT username, email, bio, avatar_path, created_at FROM users WHERE id = ?',
+        (user_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify(success=False, message='找不到使用者'), 404
+
+    return jsonify(success=True, profile={
+        'username': row['username'],
+        'email': row['email'],
+        'bio': row['bio'] or '',
+        'avatar_path': row['avatar_path'] or '',
+        'created_at': row['created_at'] or ''
+    })
+
+
+@app.route('/api/profile', methods=['POST'])
+def api_update_profile():
+    """更新使用者的 username 和 bio"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify(success=False, message='請先登入'), 401
+
+    data = request.get_json() or {}
+    new_username = (data.get('username') or '').strip()
+    new_bio = (data.get('bio') or '').strip()
+
+    if not new_username:
+        return jsonify(success=False, message='使用者名稱不能為空'), 400
+    if len(new_username) > 30:
+        return jsonify(success=False, message='名稱最多 30 個字元'), 400
+    if len(new_bio) > 150:
+        return jsonify(success=False, message='自我介紹最多 150 字'), 400
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        'UPDATE users SET username = ?, bio = ? WHERE id = ?',
+        (new_username, new_bio, user_id)
+    )
+    conn.commit()
+    conn.close()
+
+    # 同步更新 session 中的名稱
+    session['user'] = new_username
+
+    return jsonify(success=True, message='個人資料已更新', username=new_username)
+
+
+@app.route('/api/profile/avatar', methods=['POST'])
+def api_upload_avatar():
+    """上傳使用者大頭照"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify(success=False, message='請先登入'), 401
+
+    if 'avatar' not in request.files:
+        return jsonify(success=False, message='沒有收到圖片檔案'), 400
+
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify(success=False, message='未選擇檔案'), 400
+
+    if not allowed_avatar_file(file.filename):
+        return jsonify(success=False, message='僅支援 PNG、JPG、GIF、WEBP 格式'), 400
+
+    # 限制檔案大小：最大 3MB
+    file.seek(0, 2)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > 3 * 1024 * 1024:
+        return jsonify(success=False, message='圖片大小不能超過 3MB'), 400
+
+    # 用 UUID 產生唯一檔名，避免覆蓋或路徑攻擊
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"avatar_{user_id}_{uuid.uuid4().hex[:8]}.{ext}"
+    save_path = os.path.join(AVATAR_FOLDER, filename)
+    file.save(save_path)
+
+    avatar_url = f"/static/uploads/avatars/{filename}"
+
+    # 更新資料庫
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE users SET avatar_path = ? WHERE id = ?', (avatar_url, user_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify(success=True, message='大頭照已更新', avatar_path=avatar_url)
+
+# ==================== 個人資料功能擴充結束 ====================
+
 if __name__ == '__main__':
     app.run(debug=True)
 # ------------------ 分析路由新增結束 ------------------

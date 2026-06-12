@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人資料 — DREAM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* ===== 個人資料頁專用樣式 ===== */
+        .profile-wrap {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 24px 80px;
+        }
+
+        .profile-card {
+            width: 100%;
+            max-width: 560px;
+            background: rgba(10, 16, 32, 0.88);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 28px;
+            padding: 44px 40px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset;
+        }
+
+        /* 頂部頭像區 */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 36px;
+        }
+
+        .avatar-ring {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            cursor: pointer;
+        }
+
+        .avatar-ring::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: conic-gradient(
+                rgba(155,120,255,0.8),
+                rgba(0,210,255,0.8),
+                rgba(155,120,255,0.8)
+            );
+            animation: ringRotate 4s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes ringRotate {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .avatar-img {
+            position: relative;
+            z-index: 1;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(10,16,32,0.95);
+            background: rgba(155,120,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.4rem;
+            overflow: hidden;
+        }
+
+        .avatar-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.55);
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+
+        .avatar-ring:hover .avatar-overlay {
+            opacity: 1;
+        }
+
+        .avatar-overlay-text {
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+        }
+
+        #avatarInput { display: none; }
+
+        .avatar-upload-hint {
+            font-size: 0.75rem;
+            color: rgba(155,120,255,0.5);
+            letter-spacing: 0.5px;
+        }
+
+        /* 訪客預設頭像選擇器 */
+        .guest-avatars {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .guest-avatar-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid rgba(155,120,255,0.2);
+            background: rgba(155,120,255,0.08);
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .guest-avatar-btn:hover,
+        .guest-avatar-btn.selected {
+            border-color: rgba(155,120,255,0.7);
+            background: rgba(155,120,255,0.18);
+            transform: scale(1.1);
+        }
+
+        /* 使用者名稱顯示 */
+        .profile-username {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #f0f4ff;
+            letter-spacing: 0.05em;
+        }
+
+        .profile-email {
+            font-size: 0.8rem;
+            color: rgba(180,160,255,0.5);
+            letter-spacing: 0.3px;
+        }
+
+        .profile-since {
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(155,120,255,0.35);
+        }
+
+        /* 分隔線 */
+        .profile-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(155,120,255,0.2), transparent);
+            margin: 4px 0 28px;
+        }
+
+        /* 表單欄位 */
+        .profile-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .pf-field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .pf-label {
+            font-size: 0.78rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(155,120,255,0.6);
+        }
+
+        .pf-input {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(148,163,184,0.14);
+            border-radius: 12px;
+            color: #f0f4ff;
+            padding: 11px 14px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.22s, box-shadow 0.22s, background 0.22s;
+            font-family: inherit;
+            resize: none;
+        }
+
+        .pf-input:hover {
+            border-color: rgba(148,163,184,0.24);
+            background: rgba(255,255,255,0.055);
+        }
+
+        .pf-input:focus {
+            border-color: rgba(155,120,255,0.55);
+            box-shadow: 0 0 0 3px rgba(155,120,255,0.1);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .pf-input:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .pf-char-count {
+            font-size: 0.72rem;
+            color: rgba(180,160,255,0.35);
+            text-align: right;
+            margin-top: -4px;
+        }
+
+        .pf-char-count.near-limit { color: rgba(255,160,100,0.7); }
+        .pf-char-count.at-limit   { color: rgba(255,100,100,0.8); }
+
+        /* 儲存按鈕 */
+        .save-btn {
+            border: none;
+            background: linear-gradient(135deg, rgba(120,80,255,0.92), rgba(0,190,255,0.85));
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            letter-spacing: 0.5px;
+            transition: transform 0.18s, box-shadow 0.22s, opacity 0.2s;
+            box-shadow: 0 4px 16px rgba(120,80,255,0.3);
+            margin-top: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .save-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+            transition: left 0.5s;
+        }
+
+        .save-btn:hover::before { left: 100%; }
+
+        .save-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(120,80,255,0.45);
+        }
+
+        /* Toast 提示 */
+        .profile-toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(10,16,32,0.92);
+            border: 1px solid rgba(155,120,255,0.3);
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 0.85rem;
+            color: rgba(200,215,255,0.9);
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .profile-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .profile-toast.success { border-color: rgba(74,222,128,0.4); color: rgba(180,255,210,0.9); }
+        .profile-toast.error   { border-color: rgba(255,100,100,0.4); color: rgba(255,180,180,0.9); }
+
+        /* 統計列 */
+        .profile-stats {
+            display: flex;
+            gap: 0;
+            border: 1px solid rgba(155,120,255,0.12);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+
+        .stat-item {
+            flex: 1;
+            padding: 14px 10px;
+            text-align: center;
+            border-right: 1px solid rgba(155,120,255,0.1);
+        }
+
+        .stat-item:last-child { border-right: none; }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f0f4ff;
+            letter-spacing: 0.03em;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.68rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(155,120,255,0.45);
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* 回首頁連結 */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(155,120,255,0.6);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: rgba(155,120,255,0.95); }
+
+        /* 訪客模式提示 */
+        .guest-notice {
+            text-align: center;
+            padding: 20px;
+            background: rgba(155,120,255,0.05);
+            border: 1px dashed rgba(155,120,255,0.2);
+            border-radius: 14px;
+            margin-bottom: 28px;
+        }
+
+        .guest-notice p {
+            font-size: 0.85rem;
+            color: rgba(200,215,255,0.55);
+            line-height: 1.7;
+            margin: 0 0 12px;
+        }
+
+        .guest-login-btn {
+            display: inline-block;
+            padding: 8px 22px;
+            border-radius: 999px;
+            background: rgba(155,120,255,0.12);
+            border: 1px solid rgba(155,120,255,0.3);
+            color: rgba(180,160,255,0.9);
+            font-size: 0.82rem;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .guest-login-btn:hover {
+            background: rgba(155,120,255,0.22);
+            border-color: rgba(155,120,255,0.55);
+        }
+
+        @media (max-width: 640px) {
+            .profile-card { padding: 28px 20px; border-radius: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="star-layer" aria-hidden="true"></div>
+    <div class="ambient-orb one" aria-hidden="true"></div>
+    <div class="ambient-orb two" aria-hidden="true"></div>
+    <div class="ambient-orb three" aria-hidden="true"></div>
+
+    <svg class="sigil-bg" viewBox="0 0 200 200" aria-hidden="true">
+        <polygon points="100,10 190,155 10,155" fill="none" stroke="rgba(155,120,255,1)" stroke-width="0.8"/>
+        <polygon points="100,190 10,45 190,45" fill="none" stroke="rgba(155,120,255,1)" stroke-width="0.8"/>
+        <circle cx="100" cy="100" r="82" fill="none" stroke="rgba(123,220,255,.7)" stroke-width="0.6"/>
+        <circle cx="100" cy="100" r="54" fill="none" stroke="rgba(155,120,255,.5)" stroke-width="0.5" stroke-dasharray="4 3"/>
+    </svg>
+
+    <!-- 頂部 Navbar（簡版，只有 logo 和返回） -->
+    <header class="top-navbar" role="banner">
+        <a href="/" class="nav-logo" aria-label="回到首頁">
+            <svg class="nav-logo-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <polygon points="12,2 22,19 2,19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <polygon points="12,22 2,5 22,5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-logo-text">DREAM</span>
+            <span class="nav-logo-sub">潛意識觀測系統</span>
+        </a>
+        <nav class="nav-links">
+            <a href="/weaver" class="nav-link">夢境編織室</a>
+            <a href="/data" class="nav-link">心靈數據室</a>
+            <a href="/capsule" class="nav-link">情緒圖表</a>
+        </nav>
+        <div style="flex-shrink:0;">
+            <a href="/" class="nav-link" style="color:rgba(155,120,255,0.65);">← 返回大廳</a>
+        </div>
+    </header>
+
+    <div class="profile-toast" id="profileToast"></div>
+
+    <main class="content">
+        <div class="profile-wrap">
+            <div class="profile-card">
+
+                <!-- 大頭照區 -->
+                <div class="avatar-section">
+                    <div class="avatar-ring" id="avatarRing" title="點擊更換大頭照">
+                        <div class="avatar-img" id="avatarDisplay">
+                            <!-- 由 JS 填入 -->
+                        </div>
+                        <div class="avatar-overlay">
+                            <span class="avatar-overlay-text">更換<br>頭像</span>
+                        </div>
+                    </div>
+                    <input type="file" id="avatarInput" accept="image/png,image/jpeg,image/gif,image/webp">
+                    <span class="avatar-upload-hint" id="avatarHint">點擊頭像更換照片 · 最大 3MB</span>
+
+                    <div id="guestAvatarSection" style="display:none;">
+                        <p style="font-size:0.75rem;color:rgba(155,120,255,0.5);margin-bottom:8px;letter-spacing:0.5px;">選擇預設頭像</p>
+                        <div class="guest-avatars" id="guestAvatarPicker"></div>
+                    </div>
+
+                    <div id="profileMeta" style="text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;">
+                        <!-- 由 JS 填入 -->
+                    </div>
+                </div>
+
+                <!-- 統計列（登入後） -->
+                <div class="profile-stats" id="profileStats" style="display:none;">
+                    <div class="stat-item">
+                        <span class="stat-value" id="statDreams">—</span>
+                        <span class="stat-label">夢境紀錄</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statDays">—</span>
+                        <span class="stat-label">觀測天數</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statEmotions">—</span>
+                        <span class="stat-label">情緒種類</span>
+                    </div>
+                </div>
+
+                <div class="profile-divider"></div>
+
+                <!-- 訪客提示 -->
+                <div class="guest-notice" id="guestNotice" style="display:none;">
+                    <p>你目前以訪客身份瀏覽。<br>登入後可儲存個人資料與大頭照。</p>
+                    <a href="/#login" class="guest-login-btn">登入 / 建立帳號</a>
+                </div>
+
+                <!-- 個人資料表單 -->
+                <form class="profile-form" id="profileForm" novalidate>
+
+                    <div class="pf-field">
+                        <label class="pf-label" for="pfUsername">顯示名稱</label>
+                        <input class="pf-input" id="pfUsername" type="text" maxlength="30" placeholder="你想被叫什麼？" autocomplete="off">
+                        <span class="pf-char-count" id="usernameCount">0 / 30</span>
+                    </div>
+
+                    <div class="pf-field">
+                        <label class="pf-label" for="pfEmail">Email</label>
+                        <input class="pf-input" id="pfEmail" type="email" disabled placeholder="—">
+                    </div>
+
+                    <div class="pf-field">
+                        <label class="pf-label" for="pfBio">潛意識自白 <span style="font-size:0.7rem;opacity:0.5;">（選填）</span></label>
+                        <textarea class="pf-input" id="pfBio" rows="3" maxlength="150" placeholder="用一句話描述你和夢境的關係…"></textarea>
+                        <span class="pf-char-count" id="bioCount">0 / 150</span>
+                    </div>
+
+                    <div class="pf-field">
+                        <label class="pf-label" for="pfSince">加入時間</label>
+                        <input class="pf-input" id="pfSince" type="text" disabled placeholder="—">
+                    </div>
+
+                    <button type="submit" class="save-btn" id="saveBtn">儲存變更</button>
+                    <div class="validation-message" id="profileMsg" role="alert"></div>
+                </form>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* ===== 星點背景 ===== */
+        (function() {
+            const layer = document.getElementById('star-layer');
+            if (!layer) return;
+            for (let i = 0; i < 55; i++) {
+                const s = document.createElement('div');
+                s.className = 'st';
+                const sz = Math.random() * 1.6 + 0.5;
+                s.style.cssText = [
+                    `width:${sz}px`, `height:${sz}px`,
+                    `left:${Math.random()*100}%`, `top:${Math.random()*100}%`,
+                    `--peak:${0.25 + Math.random()*0.5}`,
+                    `animation-duration:${2.8 + Math.random()*5}s`,
+                    `animation-delay:-${Math.random()*8}s`
+                ].join(';');
+                layer.appendChild(s);
+            }
+        })();
+
+        /* ===== 常數 ===== */
+        const API = '/api';
+        const GUEST_AVATARS = ['🌙','⭐','🔮','🌊','🦋','🌸','🌀','💫','🦉','🌌'];
+        let isLoggedIn = false;
+        let selectedGuestAvatar = '🌙';
+
+        /* ===== Toast ===== */
+        function showToast(msg, type = '') {
+            const t = document.getElementById('profileToast');
+            t.textContent = msg;
+            t.className = `profile-toast show ${type}`;
+            setTimeout(() => { t.className = 'profile-toast'; }, 2800);
+        }
+
+        /* ===== 字數計數 ===== */
+        function bindCounter(inputId, countId, max) {
+            const el = document.getElementById(inputId);
+            const cnt = document.getElementById(countId);
+            el.addEventListener('input', () => {
+                const len = el.value.length;
+                cnt.textContent = `${len} / ${max}`;
+                cnt.className = 'pf-char-count' +
+                    (len >= max ? ' at-limit' : len >= max * 0.85 ? ' near-limit' : '');
+            });
+        }
+
+        bindCounter('pfUsername', 'usernameCount', 30);
+        bindCounter('pfBio', 'bioCount', 150);
+
+        /* ===== 頭像顯示 ===== */
+        function renderAvatar(avatarPath, username) {
+            const display = document.getElementById('avatarDisplay');
+            if (avatarPath) {
+                display.innerHTML = `<img src="${avatarPath}" alt="大頭照" onerror="this.parentElement.textContent='${(username||'?')[0].toUpperCase()}'">`;
+            } else {
+                // 用名字首字作為預設
+                display.textContent = (username || '?')[0].toUpperCase();
+                display.style.background = 'linear-gradient(135deg, rgba(155,120,255,0.4), rgba(0,210,255,0.3))';
+                display.style.color = '#f0f4ff';
+                display.style.fontSize = '2.2rem';
+                display.style.fontWeight = '700';
+                display.style.display = 'flex';
+                display.style.alignItems = 'center';
+                display.style.justifyContent = 'center';
+            }
+        }
+
+        function renderGuestAvatar(emoji) {
+            const display = document.getElementById('avatarDisplay');
+            display.textContent = emoji;
+            display.style.background = 'linear-gradient(135deg, rgba(155,120,255,0.2), rgba(0,210,255,0.15))';
+            display.style.fontSize = '2.8rem';
+            display.style.display = 'flex';
+            display.style.alignItems = 'center';
+            display.style.justifyContent = 'center';
+        }
+
+        /* ===== 訪客模式 ===== */
+        function initGuestMode() {
+            isLoggedIn = false;
+
+            document.getElementById('guestNotice').style.display = 'block';
+            document.getElementById('guestAvatarSection').style.display = 'block';
+            document.getElementById('avatarHint').style.display = 'none';
+            document.getElementById('profileStats').style.display = 'none';
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('saveBtn').style.opacity = '0.4';
+            document.getElementById('pfUsername').disabled = true;
+            document.getElementById('pfBio').disabled = true;
+
+            document.getElementById('profileMeta').innerHTML = `
+                <span class="profile-username">訪客</span>
+                <span class="profile-since">尚未登入</span>
+            `;
+
+            renderGuestAvatar(selectedGuestAvatar);
+
+            // 建立預設頭像選擇器
+            const picker = document.getElementById('guestAvatarPicker');
+            GUEST_AVATARS.forEach((emoji, i) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'guest-avatar-btn' + (i === 0 ? ' selected' : '');
+                btn.textContent = emoji;
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.guest-avatar-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    selectedGuestAvatar = emoji;
+                    renderGuestAvatar(emoji);
+                    // 存到 localStorage 讓大廳也能讀取
+                    localStorage.setItem('guestAvatar', emoji);
+                });
+                picker.appendChild(btn);
+            });
+
+            // 恢復上次選擇
+            const saved = localStorage.getItem('guestAvatar');
+            if (saved && GUEST_AVATARS.includes(saved)) {
+                selectedGuestAvatar = saved;
+                renderGuestAvatar(saved);
+                document.querySelectorAll('.guest-avatar-btn').forEach(btn => {
+                    btn.classList.toggle('selected', btn.textContent === saved);
+                });
+            }
+        }
+
+        /* ===== 載入個人資料 ===== */
+        async function loadProfile() {
+            try {
+                const res = await fetch(`${API}/profile`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    initGuestMode();
+                    return;
+                }
+
+                isLoggedIn = true;
+                const p = data.profile;
+
+                renderAvatar(p.avatar_path, p.username);
+
+                document.getElementById('profileMeta').innerHTML = `
+                    <span class="profile-username">${p.username}</span>
+                    <span class="profile-email">${p.email}</span>
+                    <span class="profile-since">加入於 ${p.created_at ? p.created_at.split(' ')[0] : '—'}</span>
+                `;
+
+                document.getElementById('pfUsername').value = p.username;
+                document.getElementById('pfEmail').value = p.email;
+                document.getElementById('pfBio').value = p.bio;
+                document.getElementById('pfSince').value = p.created_at ? p.created_at.split(' ')[0] : '—';
+
+                // 更新字數
+                document.getElementById('usernameCount').textContent = `${p.username.length} / 30`;
+                document.getElementById('bioCount').textContent = `${p.bio.length} / 150`;
+
+                // 載入統計
+                loadStats();
+
+            } catch(e) {
+                initGuestMode();
+            }
+        }
+
+        /* ===== 載入統計數字 ===== */
+        async function loadStats() {
+            document.getElementById('profileStats').style.display = 'flex';
+            try {
+                const res = await fetch(`${API}/emotion-data`);
+                const data = await res.json();
+                if (data.success) {
+                    const mapping = data.mapping || {};
+                    const seen = new Set();
+                    Object.values(mapping).forEach(list => {
+                        list.forEach(d => seen.add(`${d.date}|${d.snippet}`));
+                    });
+                    const dreamCount = seen.size;
+                    const emotionCount = Object.keys(mapping).length;
+
+                    // 觀測天數：從最早到今天
+                    const allDates = [...seen].map(k => k.split('|')[0]).filter(Boolean).sort();
+                    let days = 0;
+                    if (allDates.length >= 2) {
+                        const first = new Date(allDates[0]);
+                        const last = new Date(allDates[allDates.length - 1]);
+                        days = Math.round((last - first) / (1000*60*60*24)) + 1;
+                    } else if (allDates.length === 1) {
+                        days = 1;
+                    }
+
+                    document.getElementById('statDreams').textContent = dreamCount || 0;
+                    document.getElementById('statDays').textContent = days || 0;
+                    document.getElementById('statEmotions').textContent = emotionCount || 0;
+                }
+            } catch(e) {
+                document.getElementById('statDreams').textContent = '—';
+                document.getElementById('statDays').textContent = '—';
+                document.getElementById('statEmotions').textContent = '—';
+            }
+        }
+
+        /* ===== 頭像上傳 ===== */
+        document.getElementById('avatarRing').addEventListener('click', () => {
+            if (!isLoggedIn) return; // 訪客不觸發上傳
+            document.getElementById('avatarInput').click();
+        });
+
+        document.getElementById('avatarInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const hint = document.getElementById('avatarHint');
+            hint.textContent = '上傳中…';
+
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            try {
+                const res = await fetch(`${API}/profile/avatar`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    renderAvatar(data.avatar_path, document.getElementById('pfUsername').value);
+                    showToast('大頭照已更新', 'success');
+                    hint.textContent = '點擊頭像更換照片 · 最大 3MB';
+                } else {
+                    showToast(data.message || '上傳失敗', 'error');
+                    hint.textContent = '點擊頭像更換照片 · 最大 3MB';
+                }
+            } catch(err) {
+                showToast('網路錯誤，請稍後再試', 'error');
+                hint.textContent = '點擊頭像更換照片 · 最大 3MB';
+            }
+
+            // 清除 input 讓同一張圖可以重複上傳
+            e.target.value = '';
+        });
+
+        /* ===== 表單儲存 ===== */
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isLoggedIn) return;
+
+            const username = document.getElementById('pfUsername').value.trim();
+            const bio = document.getElementById('pfBio').value.trim();
+            const msgEl = document.getElementById('profileMsg');
+
+            if (!username) {
+                msgEl.textContent = '名稱不能為空';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/profile`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, bio })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    // 更新頁面上的名稱顯示
+                    document.querySelector('.profile-username').textContent = data.username;
+                    msgEl.textContent = '';
+                    showToast('已儲存', 'success');
+                } else {
+                    showToast(data.message || '儲存失敗', 'error');
+                }
+            } catch(err) {
+                showToast('網路錯誤，請稍後再試', 'error');
+            }
+        });
+
+        /* ===== 初始化 ===== */
+        loadProfile();
+    </script>
+
+</body>
+</html>

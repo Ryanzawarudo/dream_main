@@ -30,7 +30,7 @@
 
     <!-- 頂部導航列 -->
     <header class="top-navbar" role="banner">
-        <a href="/" class="nav-logo" aria-label="回到首頁">
+        <a href="/" class="nav-logo active" aria-label="回到首頁" id="navLogo">
             <svg class="nav-logo-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <polygon points="12,2 22,19 2,19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
                 <polygon points="12,22 2,5 22,5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
@@ -44,9 +44,28 @@
             <a href="/capsule" class="nav-link">情緒圖表</a>
         </nav>
         <div id="topAuthArea" class="top-auth-area" role="navigation" aria-label="帳號管理">
-            <span id="topUserName" class="top-user-name" aria-live="polite">訪客模式</span>
-            <button id="topLoginButton" class="top-login-button" aria-label="登入帳號">登入</button>
+    <div class="nav-avatar-link" id="navAvatarWrapper" title="帳號選單" aria-label="帳號選單" style="cursor:pointer;">
+        <div id="navAvatarInner" class="nav-avatar-inner">?</div>
+
+        <!-- 下拉選單：登入後顯示 dashboard 資訊 -->
+        <div class="user-dropdown" id="userDropdown">
+            <div class="user-dropdown-name" id="ddUsername">訪客</div>
+            <div class="user-dropdown-item">
+                <span class="db-icon">🌙</span>
+                <span id="dbDreamCount">載入中…</span>
+            </div>
+            <div class="user-dropdown-item">
+                <span class="db-icon">📅</span>
+                <span id="dbLastDate">—</span>
+            </div>
+            <div class="user-dropdown-item" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+                <a href="/profile" style="color:rgba(180,150,255,0.85); text-decoration:none; font-size:0.82rem;">前往個人資料 →</a>
+            </div>
         </div>
+        </div>
+        <span id="topUserName" class="top-user-name" aria-live="polite">訪客模式</span>
+        <button id="topLoginButton" class="top-login-button" aria-label="登入帳號">登入</button>
+    </div>
     </header>
 
     <!-- 頁尾 -->
@@ -70,31 +89,37 @@
         <section id="hall" class="panel active visible" aria-label="主頁大廳">
             <div class="hall-wrap">
 
-                <!-- 登入後顯示的 Dashboard 資訊條 -->
-                <div id="dashboardBar" class="dashboard-bar" style="display:none;" aria-live="polite">
-                    <div class="db-item">
-                        <span class="db-icon">👤</span>
-                        <span id="dbUsername" class="db-label"></span>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                    <div id="dashboardBar" class="dashboard-bar" style="display:none;" aria-live="polite">
+                        <div class="db-item">
+                            <span class="db-icon">👤</span>
+                            <span id="dbUsername" class="db-label"></span>
+                        </div>
+                        <div class="db-divider"></div>
+                        <div class="db-item">
+                            <span class="db-icon">🌙</span>
+                            <span id="dbDreamCount2" class="db-label">載入中…</span>
+                        </div>
+                        <div class="db-divider"></div>
+                        <div class="db-item">
+                            <span class="db-icon">📅</span>
+                            <span id="dbLastDate2" class="db-label">—</span>
+                        </div>
                     </div>
-                    <div class="db-divider"></div>
-                    <div class="db-item">
-                        <span class="db-icon">🌙</span>
-                        <span id="dbDreamCount" class="db-label">載入中…</span>
-                    </div>
-                    <div class="db-divider"></div>
-                    <div class="db-item">
-                        <span class="db-icon">📅</span>
-                        <span id="dbLastDate" class="db-label">—</span>
-                    </div>
-                </div>
 
-                <div class="hall-eyebrow" aria-hidden="true">
-                    <div class="eyebrow-dot"></div>
-                    Subconscious Observation System
+                    <div class="hall-eyebrow" aria-hidden="true">
+                        <div class="eyebrow-dot"></div>
+                        Subconscious Observation System
+                    </div>
                 </div>
 
                 <h1 class="hall-title">進入你的<br><span>夢境觀測站</span></h1>
                 <p class="hall-sub">記錄、解析、探索潛意識深處的訊號與符號</p>
+
+                <a href="#feature-cards" class="hero-cta" id="heroCta">
+                    開始觀測
+                    <span class="hero-cta-arrow">↓</span>
+                </a>
 
                 <div class="title-deco" aria-hidden="true">
                     <div class="dl"></div>
@@ -102,22 +127,29 @@
                     <div class="dr"></div>
                 </div>
 
-                <div class="action-grid" role="list">
+                <div class="action-grid" role="list" id="feature-cards">
 
-                    <!-- 夢境編織室 -->
-                    <a href="/weaver" class="action-card c-purple" role="listitem">
-                        <span class="card-tag">Dream · Log</span>
-                        <div class="card-icon" aria-hidden="true">🌙</div>
-                        <div class="card-title">夢境編織室</div>
-                        <div class="card-desc">記錄今日夢境，由 AI 解析潛意識符號與情緒脈絡</div>
-                        <div class="card-footer">
-                            <span class="card-badge">AI 解析</span>
-                            <span class="card-arrow" aria-hidden="true">↗</span>
+                    <!-- 夢境編織室：主 CTA，橫跨全寬 -->
+                    <a href="/weaver" class="action-card c-purple card-hero" role="listitem">
+                        <div class="card-glow-spot"></div>
+                        <div class="card-hero-inner">
+                            <div>
+                                <span class="card-tag">Dream · Log</span>
+                                <div class="card-icon" aria-hidden="true">🌙</div>
+                                <div class="card-title">夢境編織室</div>
+                                <div class="card-desc">記錄今日夢境，由 AI 解析潛意識符號與情緒脈絡</div>
+                                <div class="card-footer" style="margin-top:14px;">
+                                    <span class="card-badge">AI 解析</span>
+                                    <span class="card-cta-label">開始記錄 →</span>
+                                </div>
+                            </div>
+                            <div class="card-hero-glow" aria-hidden="true">🌙</div>
                         </div>
                     </a>
 
                     <!-- 心靈數據室 -->
-                    <a href="/data" class="action-card c-cyan" role="listitem">
+                    <a href="/data" class="action-card c-cyan" role="listitem" data-auth-required>
+                        <div class="card-glow-spot"></div>
                         <span class="card-tag">Data · Archive</span>
                         <div class="card-icon" aria-hidden="true">🔬</div>
                         <div class="card-title">心靈數據室</div>
@@ -130,6 +162,7 @@
 
                     <!-- 情緒輪廓圖表 -->
                     <a href="/capsule" class="action-card c-pink" role="listitem">
+                        <div class="card-glow-spot"></div>
                         <span class="card-tag">Emotion · Map</span>
                         <div class="card-icon" aria-hidden="true">📡</div>
                         <div class="card-title">情緒輪廓圖表</div>
@@ -142,21 +175,31 @@
 
                     <!-- 隨機靈感投遞 -->
                     <button
-                        id="inspireBtn"
-                        class="action-card c-gold"
-                        role="listitem"
-                        aria-label="點擊獲取隨機夢境靈感"
-                    >
-                        <span class="card-tag">Spark · Random</span>
-                        <div class="card-icon" aria-hidden="true">✨</div>
-                        <div class="card-title">隨機靈感投遞</div>
-                        <div class="card-desc">隨機組合夢境關鍵詞，喚醒今日記錄的靈感</div>
-                        <div class="card-footer">
-                            <span class="card-badge">即時生成</span>
-                            <span class="card-arrow" aria-hidden="true">→</span>
-                        </div>
-                    </button>
+                    id="inspireBtn"
+                    class="action-card c-gold"
+                    role="listitem"
+                    aria-label="點擊獲取隨機夢境靈感"
+                >
+                    <div class="card-glow-spot"></div>
+                    <span class="card-tag">Spark · Random</span>
+                    <div class="card-icon" aria-hidden="true">✨</div>
+                    <div class="card-title">隨機靈感投遞</div>
+                    <div class="card-desc">隨機組合夢境關鍵詞，喚醒今日記錄的靈感</div>
+                    <div class="card-footer">
+                        <span class="card-badge">即時生成</span>
+                        <span class="card-arrow" aria-hidden="true">→</span>
+                    </div>
+                </button>
 
+                <!-- 靈感輸出：移到卡片正下方，視覺上仍是獨立區塊但更貼近卡片 -->
+
+                </div>
+
+                <!-- 訪客 Toast -->
+                <div id="authToast" class="auth-toast" role="alert" aria-live="assertive">
+                    <span id="authToastMsg">請先登入才能使用此功能</span>
+                    <a href="#login" class="auth-toast-btn" id="authToastBtn">立即登入</a>
+                    <button class="auth-toast-close" id="authToastClose" aria-label="關閉">✕</button>
                 </div>
 
                 <!-- 靈感輸出 -->
@@ -507,41 +550,55 @@
 
         /* Dashboard 資訊條（登入後顯示） */
         async function updateDashboard() {
-            const bar = document.getElementById('dashboardBar');
-            if (!bar) return;
-            if (!currentUser) { bar.style.display = 'none'; return; }
-
-            document.getElementById('dbUsername').textContent = currentUser.username || currentUser.email;
-            bar.style.display = 'flex';
-
-            try {
-                const res = await fetch(`${API_BASE}/emotion-data`);
-                const data = await res.json();
-                if (data.success) {
-                    const mapping = data.mapping || {};
-                    // 用 snippet 去重：同一則夢可能出現在多個情緒 key 下，要避免重複計數
-                    const seen = new Set();
-                    let latestDate = null;
-                    Object.values(mapping).forEach(list => {
-                        list.forEach(d => {
-                            const key = `${d.date}|${d.snippet}`;
-                            if (!seen.has(key)) {
-                                seen.add(key);
-                                if (d.date && (!latestDate || d.date > latestDate)) {
-                                    latestDate = d.date;
-                                }
-                            }
-                        });
-                    });
-                    const count = seen.size;
-                    document.getElementById('dbDreamCount').textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
-                    document.getElementById('dbLastDate').textContent = latestDate ? `最近：${latestDate}` : '—';
-                }
-            } catch(e) {
-                document.getElementById('dbDreamCount').textContent = '前往心靈數據室查看';
-                document.getElementById('dbLastDate').textContent = '—';
-            }
+        const ddName = document.getElementById('ddUsername');
+        if (!ddName) return;
+        if (!currentUser) {
+            ddName.textContent = '訪客';
+            document.getElementById('dbDreamCount').textContent = '請先登入';
+            document.getElementById('dbLastDate').textContent = '—';
+            return;
         }
+
+        ddName.textContent = currentUser.username || currentUser.email;
+
+        // 新增：同步顯示頂部膠囊狀態列
+        const bar = document.getElementById('dashboardBar');
+        if (bar) {
+            bar.style.display = 'flex';
+            document.getElementById('dbUsername').textContent = currentUser.username || currentUser.email;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/emotion-data`);
+            const data = await res.json();
+            if (data.success) {
+                const mapping = data.mapping || {};
+                const seen = new Set();
+                let latestDate = null;
+                Object.values(mapping).forEach(list => {
+                    list.forEach(d => {
+                        const key = `${d.date}|${d.snippet}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            if (d.date && (!latestDate || d.date > latestDate)) {
+                                latestDate = d.date;
+                            }
+                        }
+                    });
+                });
+                const count = seen.size;
+                document.getElementById('dbDreamCount').textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
+                document.getElementById('dbLastDate').textContent = latestDate ? `最近：${latestDate}` : '—';
+                const count2El = document.getElementById('dbDreamCount2');
+                const date2El = document.getElementById('dbLastDate2');
+                if (count2El) count2El.textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
+                if (date2El) date2El.textContent = latestDate ? `最近：${latestDate}` : '—';
+            }
+        } catch(e) {
+            document.getElementById('dbDreamCount').textContent = '前往心靈數據室查看';
+            document.getElementById('dbLastDate').textContent = '—';
+        }
+    }
 
         /* 靈感關鍵詞庫 */
         const dreamKeywords = [
@@ -599,6 +656,34 @@
             ];
             const text = prompts[Math.floor(Math.random() * prompts.length)];
             typewrite(box, text);
+        });
+
+        /* ===== 訪客 Toast 攔截 ===== */
+        function showAuthToast() {
+            const toast = document.getElementById('authToast');
+            toast.classList.add('show');
+            // 3.5 秒後自動收起
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        document.getElementById('authToastClose').addEventListener('click', () => {
+            document.getElementById('authToast').classList.remove('show');
+        });
+
+        document.getElementById('authToastBtn').addEventListener('click', () => {
+            document.getElementById('authToast').classList.remove('show');
+        });
+
+        // 攔截所有帶 data-auth-required 的卡片
+        document.querySelectorAll('[data-auth-required]').forEach(card => {
+            card.addEventListener('click', e => {
+                if (!currentUser) {
+                    e.preventDefault();
+                    showAuthToast();
+                }
+                // 已登入則正常跳頁
+            });
         });
 
         /* 頁面路由（含過場動畫）*/
@@ -799,19 +884,44 @@
             cnpw.addEventListener('input', check);
         }
 
-        /* 頂部按鈕 */
+        /* 頂部按鈕 + 頭像 */
         function updateTopButton() {
             const button = document.getElementById('topLoginButton');
             const nameLabel = document.getElementById('topUserName');
+            const avatarInner = document.getElementById('navAvatarInner');
 
             if (currentUser) {
                 nameLabel.textContent = currentUser.username ? `Hello, ${currentUser.username}` : '訪客模式';
                 button.textContent = '登出';
                 button.onclick = handleLogout;
+
+                // 嘗試從 /api/profile 拿大頭照
+                if (avatarInner) {
+                    fetch('/api/profile')
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success && data.profile) {
+                                const p = data.profile;
+                                if (p.avatar_path) {
+                                    avatarInner.innerHTML = `<img src="${p.avatar_path}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="頭像">`;
+                                } else {
+                                    avatarInner.textContent = (p.username || '?')[0].toUpperCase();
+                                }
+                            }
+                        })
+                        .catch(() => {});
+                }
             } else {
                 nameLabel.textContent = '訪客模式';
                 button.textContent = '登入';
                 button.onclick = () => { window.location.hash = 'login'; };
+
+                // 訪客：讀 localStorage 的 emoji 頭像
+                if (avatarInner) {
+                    const guestEmoji = localStorage.getItem('guestAvatar') || '🌙';
+                    avatarInner.textContent = guestEmoji;
+                    avatarInner.style.fontSize = '1rem';
+                }
             }
         }
 
@@ -837,7 +947,32 @@
 
             setupPasswordMatchValidation();
             setupForgotPasswordValidation();
+            // ===== 頭像下拉選單開關 =====
+        const avatarWrapper = document.getElementById('navAvatarWrapper');
+        const userDropdown = document.getElementById('userDropdown');
+        if (avatarWrapper && userDropdown) {
+            avatarWrapper.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                userDropdown.classList.remove('show');
+            });
+        }
+
+        // ===== 卡片滑鼠光影跟隨 =====
+        document.querySelectorAll('.action-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mx', `${x}%`);
+                card.style.setProperty('--my', `${y}%`);
+            });
         });
+    });
+
+        
 
         window.addEventListener('hashchange', routeFromHash);
     </script>
