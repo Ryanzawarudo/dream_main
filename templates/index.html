@@ -221,8 +221,21 @@
             <div class="auth-wrap">
                 <div class="auth-panel">
                     <div class="auth-panel-eyebrow">Subconscious Observation System</div>
-                    <h2>登入系統</h2>
-                    <div class="auth-divider"></div>
+                    <div class="auth-icon-wrap">
+                        <div class="auth-icon-badge">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <rect x="4" y="11" width="16" height="9" rx="2" stroke="currentColor" stroke-width="1.6"/>
+                                <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                <circle cx="12" cy="15.5" r="1.4" fill="currentColor"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="auth-title">使用者登入</span>
+                    <p class="auth-subtitle">請輸入已註冊的電子郵件與密碼</p>
+                    <div class="auth-tabs">
+                        <a href="#signup" class="auth-tab">註冊</a>
+                        <a href="#login" class="auth-tab active">登入</a>
+                    </div>
                     <p class="form-note">使用 Email 與密碼登入，繼續你的潛意識探索。</p>
                     <form id="loginForm" class="auth-form" novalidate>
                         <div class="form-field">
@@ -263,8 +276,21 @@
             <div class="auth-wrap">
                 <div class="auth-panel">
                     <div class="auth-panel-eyebrow">Subconscious Observation System</div>
-                    <h2>建立新帳號</h2>
-                    <div class="auth-divider"></div>
+                    <div class="auth-icon-wrap">
+                        <div class="auth-icon-badge">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M16 21v-1.5a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4V21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="9.5" cy="8" r="3.5" stroke="currentColor" stroke-width="1.6"/>
+                                <path d="M18 8v4M16 10h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="auth-title">會員註冊</span>
+                    <p class="auth-subtitle">留下姓名與信箱，建立你的觀測檔案</p>
+                    <div class="auth-tabs">
+                        <a href="#signup" class="auth-tab active">註冊</a>
+                        <a href="#login" class="auth-tab">登入</a>
+                    </div>
                     <p class="form-note">帳號將用於存取 Subconscious Observation System。</p>
                     <form id="signupForm" class="auth-form" novalidate>
                         <div class="form-field">
@@ -327,7 +353,16 @@
             <div class="auth-wrap">
                 <div class="auth-panel">
                     <div class="auth-panel-eyebrow">Subconscious Observation System</div>
-                    <h2>重設密碼</h2>
+                    <div class="auth-icon-wrap">
+                        <div class="auth-icon-badge">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <circle cx="8" cy="15" r="3.5" stroke="currentColor" stroke-width="1.6"/>
+                                <path d="M10.5 12.5 18 5M16 7l2 2M18.5 4.5l2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="auth-title">重設密碼</span>
+                    <p class="auth-subtitle">透過 Email 驗證碼重新設定你的密碼</p>
                     <div class="auth-divider"></div>
 
                     <div id="forgotStage1" class="forgot-stage active">
@@ -453,7 +488,7 @@
                     for (let j = i + 1; j < nodes.length; j++) {
                         const d = dist(nodes[i], nodes[j]);
                         if (d < LINK_DIST) {
-                            const alpha = (1 - d / LINK_DIST) * 0.12;
+                            const alpha = (1 - d / LINK_DIST) * 0.35;
                             ctx.beginPath();
                             ctx.moveTo(nodes[i].x, nodes[i].y);
                             ctx.lineTo(nodes[j].x, nodes[j].y);
@@ -468,7 +503,7 @@
                 nodes.forEach(n => {
                     ctx.beginPath();
                     ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(180,150,255,0.35)';
+                    ctx.fillStyle = 'rgba(180,150,255,0.7)';
                     ctx.fill();
                 });
 
@@ -518,13 +553,13 @@
             for (let i = 0; i < 65; i++) {
                 const s = document.createElement('div');
                 s.className = 'st';
-                const sz = Math.random() * 1.6 + 0.5;
+                const sz = Math.random() * 2 + 1;
                 s.style.cssText = [
                     `width:${sz}px`,
                     `height:${sz}px`,
                     `left:${Math.random() * 100}%`,
                     `top:${Math.random() * 100}%`,
-                    `--peak:${0.25 + Math.random() * 0.5}`,
+                    `--peak:${0.5 + Math.random() * 0.5}`,
                     `animation-duration:${2.8 + Math.random() * 5}s`,
                     `animation-delay:-${Math.random() * 8}s`
                 ].join(';');

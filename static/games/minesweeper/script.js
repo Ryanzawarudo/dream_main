@@ -1,3 +1,4 @@
+// 取得畫面上的 DOM 元素
 const sizeMenu = document.getElementById('sizeMenu');
 const boardWrapper = document.getElementById('boardWrapper');
 const boardEl = document.getElementById('board');
@@ -6,6 +7,7 @@ const resultTitle = document.getElementById('resultTitle');
 const resultDetail = document.getElementById('resultDetail');
 const restartButton = document.getElementById('restartButton');
 
+// 遊戲資料狀態
 let rows = 0;
 let cols = 0;
 let mines = 0;
@@ -21,6 +23,7 @@ const sizes = {
   '12x12': 20
 };
 
+// 建立新的地雷格子陣列
 function createGrid(r, c) {
   rows = r;
   cols = c;
@@ -33,6 +36,7 @@ function createGrid(r, c) {
   renderBoard();
 }
 
+// 在格子上放地雷，第一步點擊的位置不會放地雷
 function placeMines(startRow, startCol) {
   const total = rows * cols;
   const startIndex = startRow * cols + startCol;
@@ -50,6 +54,7 @@ function placeMines(startRow, startCol) {
   minesPlaced = true;
 }
 
+// 計算每個格子周圍的地雷數量
 function calculateCounts() {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -70,6 +75,7 @@ function calculateCounts() {
   }
 }
 
+// 將格子渲染到畫面上，並設定點擊與右鍵事件
 function renderBoard() {
   boardEl.innerHTML = '';
   boardWrapper.classList.remove('hidden');
@@ -95,8 +101,10 @@ function renderBoard() {
   }
 }
 
+// 處理玩家點擊格子的邏輯
 function revealCell(r, c) {
   if (gameOver) return;
+  const firstClick = !minesPlaced;
   if (!minesPlaced) {
     placeMines(r, c);
     calculateCounts();
@@ -117,8 +125,8 @@ function revealCell(r, c) {
     cellEl.textContent = tile.count;
     cellEl.dataset.number = tile.count;
   }
-  if (tile.count === 0) {
-    cellEl.textContent = '';
+  if (tile.count === 0 || firstClick) {
+    cellEl.textContent = tile.count === 0 ? '' : cellEl.textContent;
     floodReveal(r, c);
   }
   if (revealedCount === rows * cols - mines) {
@@ -126,6 +134,7 @@ function revealCell(r, c) {
   }
 }
 
+// 當點到空白格時，遞迴展開四周的安全格
 function floodReveal(r, c) {
   for (let dr = -1; dr <= 1; dr++) {
     for (let dc = -1; dc <= 1; dc++) {
@@ -149,6 +158,7 @@ function floodReveal(r, c) {
   }
 }
 
+// 右鍵切換插旗、問號、取消標記
 function toggleMark(event, r, c) {
   event.preventDefault();
   if (gameOver) return;
@@ -171,6 +181,7 @@ function getCellElement(r, c) {
   return boardEl.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
 }
 
+// 遊戲結束後顯示結果，並揭開所有地雷位子
 function endGame(win) {
   gameOver = true;
   revealAllMines();
@@ -184,6 +195,7 @@ function endGame(win) {
   }
 }
 
+// 揭開所有地雷，並標示錯誤插旗的格子
 function revealAllMines() {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -202,6 +214,7 @@ function revealAllMines() {
   }
 }
 
+// 重置遊戲，回到選尺寸頁面
 function resetGame() {
   resultModal.classList.remove('active');
   boardWrapper.classList.add('hidden');
@@ -213,6 +226,7 @@ function resetGame() {
   revealedCount = 0;
 }
 
+// 連接尺寸按鈕事件，建立新遊戲
 document.querySelectorAll('.size-buttons button').forEach(button => {
   button.addEventListener('click', () => {
     const r = Number(button.dataset.rows);

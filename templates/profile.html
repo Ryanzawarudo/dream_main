@@ -26,6 +26,26 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             box-shadow: 0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 頂部裝飾光條 */
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 16%; right: 16%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(155,120,255,0.5), rgba(0,210,255,0.4), transparent);
+        }
+
+        .profile-eyebrow {
+            text-align: center;
+            font-size: 9.5px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: rgba(180, 160, 255, 0.7);
+            margin-bottom: 22px;
         }
 
         /* 頂部頭像區 */
@@ -115,7 +135,7 @@
 
         .avatar-upload-hint {
             font-size: 0.75rem;
-            color: rgba(155,120,255,0.5);
+            color: rgba(180,160,255,0.65);
             letter-spacing: 0.5px;
         }
 
@@ -158,7 +178,7 @@
 
         .profile-email {
             font-size: 0.8rem;
-            color: rgba(180,160,255,0.5);
+            color: rgba(190,200,255,0.65);
             letter-spacing: 0.3px;
         }
 
@@ -166,7 +186,7 @@
             font-size: 0.72rem;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: rgba(155,120,255,0.35);
+            color: rgba(155,120,255, 0.55);
         }
 
         /* 分隔線 */
@@ -190,10 +210,18 @@
         }
 
         .pf-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 0.78rem;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: rgba(155,120,255,0.6);
+            color: rgba(180,160,255,0.85);
+        }
+
+        .pf-label-icon {
+            font-size: 0.85rem;
+            opacity: 0.85;
         }
 
         .pf-input {
@@ -227,7 +255,7 @@
 
         .pf-char-count {
             font-size: 0.72rem;
-            color: rgba(180,160,255,0.35);
+            color: rgba(190,180,255,0.5);
             text-align: right;
             margin-top: -4px;
         }
@@ -302,17 +330,23 @@
         .profile-stats {
             display: flex;
             gap: 0;
-            border: 1px solid rgba(155,120,255,0.12);
+            border: 1px solid rgba(155,120,255,0.18);
             border-radius: 14px;
             overflow: hidden;
             margin-bottom: 28px;
+            background: rgba(155,120,255,0.04);
         }
 
         .stat-item {
             flex: 1;
             padding: 14px 10px;
             text-align: center;
-            border-right: 1px solid rgba(155,120,255,0.1);
+            border-right: 1px solid rgba(155,120,255,0.14);
+            transition: background 0.25s;
+        }
+
+        .stat-item:hover {
+            background: rgba(155,120,255,0.08);
         }
 
         .stat-item:last-child { border-right: none; }
@@ -323,13 +357,17 @@
             color: #f0f4ff;
             letter-spacing: 0.03em;
             display: block;
+            background: linear-gradient(135deg, #cfc2ff 0%, #9adfff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .stat-label {
             font-size: 0.68rem;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: rgba(155,120,255,0.45);
+            color: rgba(180,160,255,0.6);
             display: block;
             margin-top: 2px;
         }
@@ -361,7 +399,7 @@
 
         .guest-notice p {
             font-size: 0.85rem;
-            color: rgba(200,215,255,0.55);
+            color: rgba(210,220,255,0.7);
             line-height: 1.7;
             margin: 0 0 12px;
         }
@@ -429,6 +467,8 @@
         <div class="profile-wrap">
             <div class="profile-card">
 
+                <div class="profile-eyebrow">Subconscious Observation System · Profile</div>
+
                 <!-- 大頭照區 -->
                 <div class="avatar-section">
                     <div class="avatar-ring" id="avatarRing" title="點擊更換大頭照">
@@ -443,7 +483,7 @@
                     <span class="avatar-upload-hint" id="avatarHint">點擊頭像更換照片 · 最大 3MB</span>
 
                     <div id="guestAvatarSection" style="display:none;">
-                        <p style="font-size:0.75rem;color:rgba(155,120,255,0.5);margin-bottom:8px;letter-spacing:0.5px;">選擇預設頭像</p>
+                        <p style="font-size:0.75rem;color:rgba(180,160,255,0.65);margin-bottom:8px;letter-spacing:0.5px;text-align:center;">選擇預設頭像</p>
                         <div class="guest-avatars" id="guestAvatarPicker"></div>
                     </div>
 
@@ -480,24 +520,24 @@
                 <form class="profile-form" id="profileForm" novalidate>
 
                     <div class="pf-field">
-                        <label class="pf-label" for="pfUsername">顯示名稱</label>
+                        <label class="pf-label" for="pfUsername"><span class="pf-label-icon">🪞</span>顯示名稱</label>
                         <input class="pf-input" id="pfUsername" type="text" maxlength="30" placeholder="你想被叫什麼？" autocomplete="off">
                         <span class="pf-char-count" id="usernameCount">0 / 30</span>
                     </div>
 
                     <div class="pf-field">
-                        <label class="pf-label" for="pfEmail">Email</label>
+                        <label class="pf-label" for="pfEmail"><span class="pf-label-icon">✉️</span>Email</label>
                         <input class="pf-input" id="pfEmail" type="email" disabled placeholder="—">
                     </div>
 
                     <div class="pf-field">
-                        <label class="pf-label" for="pfBio">潛意識自白 <span style="font-size:0.7rem;opacity:0.5;">（選填）</span></label>
+                        <label class="pf-label" for="pfBio"><span class="pf-label-icon">🌙</span>潛意識自白 <span style="font-size:0.7rem;opacity:0.6;text-transform:none;letter-spacing:0;">（選填）</span></label>
                         <textarea class="pf-input" id="pfBio" rows="3" maxlength="150" placeholder="用一句話描述你和夢境的關係…"></textarea>
                         <span class="pf-char-count" id="bioCount">0 / 150</span>
                     </div>
 
                     <div class="pf-field">
-                        <label class="pf-label" for="pfSince">加入時間</label>
+                        <label class="pf-label" for="pfSince"><span class="pf-label-icon">📅</span>加入時間</label>
                         <input class="pf-input" id="pfSince" type="text" disabled placeholder="—">
                     </div>
 
@@ -517,11 +557,11 @@
             for (let i = 0; i < 55; i++) {
                 const s = document.createElement('div');
                 s.className = 'st';
-                const sz = Math.random() * 1.6 + 0.5;
+                const sz = Math.random() * 2 + 1;
                 s.style.cssText = [
                     `width:${sz}px`, `height:${sz}px`,
                     `left:${Math.random()*100}%`, `top:${Math.random()*100}%`,
-                    `--peak:${0.25 + Math.random()*0.5}`,
+                    `--peak:${0.5 + Math.random()*0.5}`,
                     `animation-duration:${2.8 + Math.random()*5}s`,
                     `animation-delay:-${Math.random()*8}s`
                 ].join(';');

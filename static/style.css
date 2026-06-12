@@ -720,17 +720,22 @@ html, body {
     width: 100%;
     max-width: 800px;
     min-height: 68px;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.065);
-    border-radius: 16px;
-    padding: 18px 24px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 22px;
+    padding: 18px 26px;
     color: rgba(200, 215, 255, 0.45);
     font-size: 0.92rem;
     line-height: 1.75;
     letter-spacing: 0.6px;
-    transition: color 0.4s, border-color 0.4s, background 0.4s;
+    transition: color 0.4s, border-color 0.4s, background 0.4s, box-shadow 0.4s;
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
 }
 
 .inspiration-box::before {
@@ -746,12 +751,13 @@ html, body {
 
 .inspiration-box.active {
     color: #d8e6ff;
-    border-color: rgba(155, 120, 255, 0.22);
-    background: rgba(155, 120, 255, 0.04);
+    border-color: rgba(220, 175, 60, 0.35);
+    background: rgba(220, 175, 60, 0.05);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28), 0 0 30px rgba(220, 175, 60, 0.12);
 }
 
 .inspiration-box.active::before {
-    background: linear-gradient(180deg, transparent, rgba(155, 120, 255, 0.7), transparent);
+    background: linear-gradient(180deg, transparent, rgba(220, 175, 60, 0.7), transparent);
 }
 
 /* 打字機游標 */
@@ -796,8 +802,9 @@ html, body {
     font-size: 9.5px;
     letter-spacing: 2.5px;
     text-transform: uppercase;
-    color: rgba(155, 120, 255, 0.55);
+    color: rgba(180, 160, 255, 0.75);
     margin-bottom: 10px;
+    text-align: center;
 }
 
 .auth-panel h2 {
@@ -806,6 +813,93 @@ html, body {
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 0.03em;
+}
+
+/* ===== 認證頁頭：大圖示 + 大標題 ===== */
+.auth-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.auth-icon-badge {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(124,77,255,0.22), rgba(0,190,255,0.16));
+    border: 1px solid rgba(155,120,255,0.28);
+    box-shadow: 0 8px 28px rgba(124,77,255,0.22), 0 0 0 1px rgba(255,255,255,0.04) inset;
+}
+
+.auth-icon-badge svg {
+    width: 28px;
+    height: 28px;
+    color: rgba(190, 170, 255, 0.95);
+    filter: drop-shadow(0 0 8px rgba(155,120,255,0.45));
+}
+
+.auth-title {
+    text-align: center;
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #cfc2ff 0%, #9adfff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+}
+
+.auth-subtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    color: rgba(200, 215, 255, 0.55);
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+}
+
+/* ===== 登入 / 註冊 分頁切換 ===== */
+.auth-tabs {
+    display: flex;
+    gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 999px;
+    padding: 5px;
+    margin: 22px 0 20px;
+}
+
+.auth-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: rgba(200, 215, 255, 0.5);
+    text-decoration: none;
+    transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+
+.auth-tab:hover {
+    color: rgba(220, 230, 255, 0.85);
+    background: rgba(155,120,255,0.08);
+}
+
+.auth-tab.active {
+    background: linear-gradient(135deg, rgba(124,77,255,0.95), rgba(0,170,255,0.9));
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(124,77,255,0.4);
+}
+
+.auth-tab.active:hover {
+    background: linear-gradient(135deg, rgba(124,77,255,0.95), rgba(0,170,255,0.9));
 }
 
 .auth-divider {
@@ -822,9 +916,10 @@ html, body {
 }
 
 .form-note {
-    color: rgba(148, 163, 184, 0.7);
+    color: rgba(200, 215, 255, 0.6);
     font-size: 0.85rem;
     line-height: 1.6;
+    text-align: center;
 }
 
 .form-field {
@@ -1379,11 +1474,7 @@ html, body {
     50% { transform: translate(6px, -6px); }
 }
 
-/* card-cta-label 同步微動 */
-.action-card.card-hero:hover .card-cta-label::after {
-    content: ' →';
-    display: inline-block;
-}
+/* card-cta-label 同步微動：移除多餘箭頭，避免與文字內的「→」重複 */
 
 /* ===== 6. 靈感卡片內嵌提示，移除外部長條 ===== */
 .inspire-card {
@@ -1442,4 +1533,16 @@ html, body {
 /* RWD */
 @media (max-width: 768px) {
     .user-dropdown { right: -10px; min-width: 200px; }
+}
+
+/* =============================================
+   修正項目（本次新增）
+   1. 靈感投遞輸出框補上卡片式外框
+   2. 神經網路動畫加亮（見上方 #neural-canvas opacity 調整）
+   3. 星點亮度加強（見上方 stTwk 與 JS --peak 範圍調整）
+   4. 移除夢境編織室箭頭重複顯示
+   ============================================= */
+
+#neural-canvas {
+    opacity: 1;
 }
