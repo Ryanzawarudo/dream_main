@@ -548,7 +548,7 @@
                 console.log('checkMusicAvailability response:', data);
                 
                 if (data.background && data.background.length > 0) {
-                    backgroundMusic.src = `/static/music/${data.background[0]}`;
+                    backgroundMusic.src = `/static/games/electric/music/${data.background[0]}`;
                     backgroundMusic.load();
                     gameState.musicData.background = data.background[0];
                     console.log(`✓ 背景音樂已載入: ${data.background[0]}`);
@@ -560,14 +560,14 @@
                 }
                 
                 if (data.success && data.success.length > 0) {
-                    successMusic.src = `/static/music/${data.success[0]}`;
+                    successMusic.src = `/static/games/electric/music/${data.success[0]}`;
                     successMusic.load();
                     gameState.musicData.success = data.success[0];
                     console.log(`✓ 成功音樂已載入: ${data.success[0]}`);
                 }
                 
                 if (data.scare && data.scare.length > 0) {
-                    scareMusic.src = `/static/music/${data.scare[0]}`;
+                    scareMusic.src = `/static/games/electric/music/${data.scare[0]}`;
                     scareMusic.load();
                     gameState.musicData.scare = data.scare[0];
                     console.log(`✓ 驚嚇音樂已載入: ${data.scare[0]}`);
@@ -886,7 +886,7 @@
                 img.onload = function() {
                     failImageContent.innerHTML = `
                         <button class="close-fail-image" onclick="closeFailImage('failed')">✕</button>
-                        <img src="/static/images/${fileName}" alt="遊戲失敗">
+                        <img src="/static/games/electric/images/${fileName}" alt="遊戲失敗">
                     `;
                     failImageContainer.classList.add('show');
                 };
@@ -896,7 +896,7 @@
                     checkNextImage();
                 };
                 
-                img.src = `/static/images/${fileName}`;
+                img.src = `/static/games/electric/images/${fileName}`;
             }
 
             checkNextImage();
