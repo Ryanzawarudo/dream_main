@@ -117,7 +117,7 @@
         <!-- 背景音樂開關：開啟/關閉潛意識環境音 -->
         <div class="settings-option">
           <div class="toggle-switch">
-            <input type="checkbox" id="toggle-music" title="切換背景環境音" />
+            <input type="checkbox" id="toggle-music" title="切換背景環境音" checked />
             <div class="switch-slider"></div>
           </div>
           <label for="toggle-music">開啟潛意識環境音</label>
@@ -476,6 +476,11 @@ majorPos.forEach(([lx,ty])=>{
         // 將遮罩設為不可再點擊，避免重複觸發
         overlay.setAttribute("aria-hidden", "true");
 
+        // ★ 新增：使用者第一次互動，瀏覽器允許播放音訊 → 若預設開啟，啟動背景音樂
+        if (toggleMusicCheckbox && toggleMusicCheckbox.checked) {
+          startBgMusic();
+        }
+
         // 在動畫完成後，再將整個遮罩隱藏，避免仍然佔用畫面
         setTimeout(function () {
           overlay.classList.add("hidden");
@@ -553,38 +558,44 @@ majorPos.forEach(([lx,ty])=>{
       - 支援音量漸變效果
     */
 
+// ============ 共用：背景音樂淡入 / 淡出 ============
+      function startBgMusic() {
+        bgMusic.volume = 0;
+        bgMusic.play().catch(function (err) {
+          console.warn("背景音訊播放失敗：", err);
+        });
+
+        let vol = 0;
+        const volumeInterval = setInterval(function () {
+          vol += 0.05;
+          if (vol >= 0.3) {
+            bgMusic.volume = 0.3;
+            clearInterval(volumeInterval);
+          } else {
+            bgMusic.volume = vol;
+          }
+        }, 100);
+      }
+
+      function stopBgMusic() {
+        let vol = bgMusic.volume;
+        const volumeInterval = setInterval(function () {
+          vol -= 0.05;
+          if (vol <= 0) {
+            bgMusic.volume = 0;
+            bgMusic.pause();
+            clearInterval(volumeInterval);
+          } else {
+            bgMusic.volume = vol;
+          }
+        }, 100);
+      }
+
       toggleMusicCheckbox.addEventListener("change", function () {
         if (toggleMusicCheckbox.checked) {
-          // 設定音量為 0，然後播放
-          bgMusic.volume = 0;
-          bgMusic.play().catch(function (err) {
-            console.warn("背景音訊播放失敗：", err);
-          });
-
-          // 平滑增加音量（0 -> 0.3）
-          let vol = 0;
-          const volumeInterval = setInterval(function () {
-            vol += 0.05;
-            if (vol >= 0.3) {
-              bgMusic.volume = 0.3;
-              clearInterval(volumeInterval);
-            } else {
-              bgMusic.volume = vol;
-            }
-          }, 100);
+          startBgMusic();
         } else {
-          // 平滑降低音量（0.3 -> 0），然後暫停
-          let vol = bgMusic.volume;
-          const volumeInterval = setInterval(function () {
-            vol -= 0.05;
-            if (vol <= 0) {
-              bgMusic.volume = 0;
-              bgMusic.pause();
-              clearInterval(volumeInterval);
-            } else {
-              bgMusic.volume = vol;
-            }
-          }, 100);
+          stopBgMusic();
         }
       });
 
