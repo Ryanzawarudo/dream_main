@@ -474,8 +474,32 @@
             gameOver: false,           // 遊戲是否結束
             isDrawing: false,          // 滑鼠是否正在繪製
             currentPaperIndex: 0,      // 目前考卷索引（1-based）
-            totalPapers: 0             // 總考卷數量
+            totalPapers: 0,            // 總考卷數量
+            statsRecorded: false       // 是否已記錄本局統計
         };
+
+        function notifyGamePlayed(gameId, details) {
+            try {
+                if (window.parent && window.parent !== window && typeof window.parent.markGamePlayed === 'function') {
+                    window.parent.markGamePlayed(gameId, details);
+                } else if (window.opener && typeof window.opener.markGamePlayed === 'function') {
+                    window.opener.markGamePlayed(gameId, details);
+                } else {
+                    const played = JSON.parse(localStorage.getItem('playedGames') || '[]');
+                    if (!played.includes(gameId)) {
+                        played.push(gameId);
+                        localStorage.setItem('playedGames', JSON.stringify(played));
+                    }
+                    fetch('/api/game-stats', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ angry_corrected: {op:'inc', val: details && Number(details.count) ? Number(details.count) : 1} })
+                    }).catch(() => {});
+                }
+            } catch (err) {
+                console.warn('notifyGamePlayed error', err);
+            }
+        }
 
         // ==================== DOM 元素引用 ====================
         const canvas = document.getElementById('gameCanvas');
@@ -487,6 +511,18 @@
         const startButton = document.getElementById('startButton');
         const progressBar = document.getElementById('progressBar');
         const restartButton = document.getElementById('restartButton');
+
+        // ==================== 音樂與音效設定 ====================
+        const bgmAudio = new Audio('/static/games/angry/music/BGM/bgm.mp3');
+        bgmAudio.loop = true;
+        bgmAudio.volume = 0.3;
+        bgmAudio.preload = 'auto';
+
+        const writingAudio = new Audio('/static/games/angry/music/writing/writing.wav');
+        writingAudio.loop = true;
+        writingAudio.volume = 1.0;
+        writingAudio.preload = 'auto';
+        let isWritingAudioPlaying = false;
 
         // ==================== 頁面初始化 ====================
         document.addEventListener('DOMContentLoaded', function() {
@@ -515,7 +551,11 @@
             // 隱藏規則彈窗
             rulesModal.style.display = 'none';
             gameState.gameStarted = true;
-
+            // 開始背景音樂（在使用者互動後播放）
+            bgmAudio.currentTime = 0;
+            bgmAudio.play().catch(error => {
+                console.warn('BGM 無法播放：', error);
+            });
             // 從伺服器取得第一張考卷
             await loadNextPaper();
         }
@@ -652,6 +692,14 @@
             // 【開始新的繪製路徑】
             ctx.beginPath();
             ctx.moveTo(x, y);
+            // 開始寫字音效
+            if (!isWritingAudioPlaying) {
+                isWritingAudioPlaying = true;
+                writingAudio.currentTime = 0;
+                writingAudio.play().catch(error => {
+                    console.warn('寫字音效無法播放：', error);
+                });
+            }
         }
 
         /**
@@ -690,6 +738,12 @@
         function stopDrawing() {
             gameState.isDrawing = false;
             ctx.closePath();
+            // 停止寫字音效
+            if (isWritingAudioPlaying) {
+                writingAudio.pause();
+                writingAudio.currentTime = 0;
+                isWritingAudioPlaying = false;
+            }
         }
 
         // ==================== 下一張按鈕函數 ====================
@@ -738,6 +792,7 @@
                 gameState.gameOver = false;
                 gameState.currentPaperIndex = 0;
                 gameState.totalPapers = 0;
+                gameState.statsRecorded = false;
                 updateProgressBar();
 
                 // 隱藏遊戲畫面並顯示規則說明彈窗
@@ -766,6 +821,11 @@
         function endGame() {
             // 【設定遊戲狀態】
             gameState.gameOver = true;
+
+            if (!gameState.statsRecorded) {
+                notifyGamePlayed('angry', {count: 4});
+                gameState.statsRecorded = true;
+            }
 
             // 【隱藏遊戲元素】
             canvasWrapper.style.display = 'none';

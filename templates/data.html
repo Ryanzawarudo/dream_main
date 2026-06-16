@@ -122,6 +122,8 @@
     <main class="container">
       <div class="card">
         <section class="panel active">
+            <!-- (狀態欄已移至頁面底部，由後端資料控制顯示) -->
+
             <h2 class="main-title">心靈數據室</h2>
             <div class="title-deco"><span class="dl"></span><span class="dgem"></span><span class="dr"></span></div>
             <p class="lead">使用者：<strong>{{ user or '訪客' }}</strong></p>
@@ -239,11 +241,121 @@
         cards.forEach(card => container.appendChild(card));
     }
     </script>
-    <div id="image-lightbox" class="image-lightbox">
-      <img id="lightbox-image" src="" alt="放大夢境記憶照片" />
-    </div>
+        <!-- 狀態欄：顯示玩家已玩過的情緒遊戲（由 DB 儲存的遊戲統計決定高亮與數值） -->
+        <div id="status-bar" style="display:flex;flex-direction:column;gap:8px;margin:18px 20px;padding:12px;border-radius:12px;background:linear-gradient(90deg,rgba(0,0,0,.04),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.03);">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="font-size:0.95rem;color:rgba(255,255,255,.9);font-weight:600;">已玩過的情緒遊戲</div>
+                <div style="margin-left:auto;font-size:0.82rem;color:rgba(255,255,255,.6);">資料來源：資料庫（登入使用者）或本機記錄</div>
+            </div>
+            <div id="status-games" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        </div>
+
+        <div id="image-lightbox" class="image-lightbox">
+            <img id="lightbox-image" src="" alt="放大夢境記憶照片" />
+        </div>
     <div id="aurora-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
     <div id="meteor-layer" style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;"></div>
+    <script>
+    (function(){
+        const games = [
+            {id: 'angry', name: 'Angry', url: "{{ url_for('static', filename='games/angry/index.html') }}"},
+            {id: 'electric', name: 'Electric', url: "{{ url_for('static', filename='games/electric/index.html') }}"},
+            {id: 'minesweeper', name: 'Minesweeper', url: "{{ url_for('static', filename='games/minesweeper/index.html') }}"},
+            {id: 'popfat', name: 'PopFat', url: "{{ url_for('static', filename='games/popfat/index.html') }}"},
+            {id: 'tetris', name: 'Tetris', url: "{{ url_for('static', filename='games/tetris/index.html') }}"}
+        ];
+
+        function getPlayedLocal(){
+            try{ return JSON.parse(localStorage.getItem('playedGames')||'[]'); }catch(e){return []}
+        }
+
+        function renderFromLocal(){
+            const container = document.getElementById('status-games'); if(!container) return;
+            const played = getPlayedLocal(); container.innerHTML = '';
+            games.forEach(g=>{
+                const el = document.createElement('a');
+                el.href = g.url || '#'; el.target='_blank'; el.rel='noopener noreferrer';
+                el.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;font-size:0.86rem;text-decoration:none;border:1px dashed rgba(255,255,255,.04);color:rgba(255,255,255,.75);';
+                if(played.includes(g.id)){
+                    el.style.background = 'linear-gradient(90deg, rgba(123,220,255,.12), rgba(155,120,255,.08))';
+                    el.style.border = '1px solid rgba(123,220,255,.25)'; el.style.color='#eafcff'; el.textContent = '✓ '+g.name;
+                } else { el.textContent = g.name }
+                container.appendChild(el);
+            });
+        }
+
+        function renderFromServer(stats){
+            const container = document.getElementById('status-games'); if(!container) return; container.innerHTML = '';
+            // helper to determine played state
+            function playedFlagFor(id, stats){
+                if(!stats) return false;
+                if(id === 'angry') return (stats.angry_corrected||0) > 0;
+                if(id === 'electric') return ((stats.electric_success||0) + (stats.electric_fail||0)) > 0;
+                if(id === 'minesweeper') return ((stats.mines_success||0)+(stats.mines_fail||0))>0;
+                if(id === 'popfat') return (stats.popfat_max_kg||0) > 0;
+                if(id === 'tetris') return (stats.tetris_lines_cleared||0) > 0;
+                return false;
+            }
+
+            games.forEach(g=>{
+                const el = document.createElement('a');
+                el.href = g.url || '#'; el.target='_blank'; el.rel='noopener noreferrer';
+                el.style.cssText = 'display:inline-flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px;border-radius:10px;font-size:0.86rem;text-decoration:none;min-width:140px;';
+                const played = playedFlagFor(g.id, stats);
+                if(played){ el.style.background = 'linear-gradient(90deg, rgba(123,220,255,.12), rgba(155,120,255,.08))'; el.style.border='1px solid rgba(123,220,255,.25)'; el.style.color='#eafcff'; }
+                else { el.style.background='transparent'; el.style.border='1px dashed rgba(255,255,255,.04)'; el.style.color='rgba(255,255,255,.75)'; }
+
+                const title = document.createElement('div'); title.style.fontWeight='700'; title.textContent = g.name;
+                const meta = document.createElement('div'); meta.style.fontSize='0.82rem'; meta.style.color='rgba(255,255,255,.85)';
+                // show per-game stats
+                if(g.id === 'angry'){
+                    meta.textContent = `已改過 ${stats && stats.angry_corrected ? stats.angry_corrected : 0} 張考卷`;
+                } else if(g.id === 'electric'){
+                    meta.textContent = `成功 ${stats && stats.electric_success?stats.electric_success:0} 次 · 失敗 ${stats && stats.electric_fail?stats.electric_fail:0} 次`;
+                } else if(g.id === 'minesweeper'){
+                    meta.textContent = `成功 ${stats && stats.mines_success?stats.mines_success:0} 次 · 失敗 ${stats && stats.mines_fail?stats.mines_fail:0} 次`;
+                } else if(g.id === 'popfat'){
+                    meta.textContent = `最高讓貓胖了 ${(stats && stats.popfat_max_kg)?stats.popfat_max_kg:0} 公斤`;
+                } else if(g.id === 'tetris'){
+                    meta.textContent = `總共消了 ${stats && stats.tetris_lines_cleared?stats.tetris_lines_cleared:0} 行`;
+                }
+
+                el.appendChild(title); el.appendChild(meta);
+                container.appendChild(el);
+            });
+        }
+
+        // keep existing markGamePlayed behaviour (update local + POST); after POST, re-fetch server stats
+        window.markGamePlayed = window.markGamePlayed || function(id, details){
+            try{
+                const played = getPlayedLocal();
+                if(!played.includes(id)){ played.push(id); localStorage.setItem('playedGames', JSON.stringify(played)); }
+
+                let payload = {};
+                if(id === 'angry'){ const cnt = (details && details.count) ? Number(details.count) : 1; payload.angry_corrected = {op:'inc', val: cnt}; }
+                else if(id === 'electric'){ const success = details && details.success === true; payload[ success ? 'electric_success' : 'electric_fail' ] = {op:'inc', val:1}; }
+                else if(id === 'minesweeper'){ const success = details && details.success === true; payload[ success ? 'mines_success' : 'mines_fail' ] = {op:'inc', val:1}; }
+                else if(id === 'popfat'){ const kg = details && !isNaN(Number(details.kg)) ? Number(details.kg) : null; if(kg !== null) payload.popfat_max_kg = {op:'max', val: kg}; }
+                else if(id === 'tetris'){ const lines = (details && !isNaN(Number(details.lines))) ? Number(details.lines) : 0; if(lines>0) payload.tetris_lines_cleared = {op:'inc', val: lines}; }
+
+                if(Object.keys(payload).length){
+                    fetch('/api/game-stats', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+                        .then(r=>r.json()).then(res=>{ if(res && res.success && res.stats){ renderFromServer(res.stats); } }).catch(()=>{});
+                }
+            }catch(e){console.warn('markGamePlayed error', e)}
+        };
+
+        document.addEventListener('DOMContentLoaded', async ()=>{
+            const container = document.getElementById('status-games'); if(!container) return;
+            try{
+                const resp = await fetch('/api/game-stats');
+                if(resp.ok){ const data = await resp.json(); if(data && data.success){ renderFromServer(data.stats||{}); return; } }
+            }catch(e){ /* ignore */ }
+            // fallback to local
+            renderFromLocal();
+        });
+    })();
+    </script>
     <script src="{{ url_for('static', filename='shared-dream-effects.js') }}"></script>
 </body>
 </html>

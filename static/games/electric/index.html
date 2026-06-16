@@ -492,8 +492,41 @@
                 background: null,
                 success: null,
                 scare: null
-            }
+            },
+            statsRecorded: false
         };
+
+        //呼叫父頁markGamePlayed(...) or 直接更新 localStorage or 發送 /api/game-stats 給後端
+        function notifyGamePlayed(gameId, details) {
+            try {
+                if (window.parent && window.parent !== window && typeof window.parent.markGamePlayed === 'function') {
+                    window.parent.markGamePlayed(gameId, details);
+                    return;
+                }
+                if (window.opener && typeof window.opener.markGamePlayed === 'function') {
+                    window.opener.markGamePlayed(gameId, details);
+                    return;
+                }
+                const played = JSON.parse(localStorage.getItem('playedGames') || '[]');
+                if (!played.includes(gameId)) {
+                    played.push(gameId);
+                    localStorage.setItem('playedGames', JSON.stringify(played));
+                }
+                const payload = {};
+                if (gameId === 'electric') {
+                    payload[details && details.success ? 'electric_success' : 'electric_fail'] = {op:'inc', val:1};
+                }
+                if (Object.keys(payload).length) {
+                    fetch('/api/game-stats', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    }).catch(() => {});
+                }
+            } catch (err) {
+                console.warn('notifyGamePlayed error', err);
+            }
+        }
 
         const pathPoints = [
             { x: 42.75, y: 339 },
@@ -775,6 +808,11 @@
             if (pathInfo.distance > gameState.pathWidth / 2) {
                 gameState.isFailed = true;
                 
+                if (!gameState.statsRecorded) {
+                    notifyGamePlayed('electric', {success:false});
+                    gameState.statsRecorded = true;
+                }
+
                 // 停止背景音樂，撥放驚嚇音樂
                 playScareMusic();
                 showFailImage();
@@ -787,6 +825,11 @@
             if (distToEnd < 25 * 0.95) {
                 gameState.isSuccess = true;
                 
+                if (!gameState.statsRecorded) {
+                    notifyGamePlayed('electric', {success:true});
+                    gameState.statsRecorded = true;
+                }
+
                 // 停止背景音樂，延遲 0.5 秒後撥放勝利音樂
                 stopBackgroundMusic();
                 setTimeout(() => {
@@ -933,6 +976,7 @@
                 // 只有點擊綠色起點才能開始遊戲
                 if (distToStart <= 20 * 0.95) {
                     gameState.isPlaying = true;
+                    gameState.statsRecorded = false;
                     statusDiv.textContent = '✓ 遊戲進行中...小心不要碰到牆壁！';
                     statusDiv.className = 'status playing';
 

@@ -16,6 +16,88 @@ let grid = [];
 let cells = [];
 let revealedCount = 0;
 let minesPlaced = false;
+let statsRecorded = false;
+
+//呼叫父頁markGamePlayed(...) or 直接更新 localStorage or 發送 /api/game-stats 給後端
+function notifyGamePlayed(gameId, details) {
+  try {
+    if (window.parent && window.parent !== window && typeof window.parent.markGamePlayed === 'function') {
+      window.parent.markGamePlayed(gameId, details);
+      return;
+    }
+    if (window.opener && typeof window.opener.markGamePlayed === 'function') {
+      window.opener.markGamePlayed(gameId, details);
+      return;
+    }
+    const played = JSON.parse(localStorage.getItem('playedGames') || '[]');
+    if (!played.includes(gameId)) {
+      played.push(gameId);
+      localStorage.setItem('playedGames', JSON.stringify(played));
+    }
+    fetch('/api/game-stats', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ mines_success: {op: 'inc', val: details && details.success ? 1 : 0}, mines_fail: {op: 'inc', val: details && details.success ? 0 : 1} })
+    }).catch(() => {});
+  } catch (err) {
+    console.warn('notifyGamePlayed error', err);
+  }
+}
+
+// ==================== 音樂與音效設定 ====================
+function createAudio(path) {
+  const audio = new Audio(encodeURI(path));
+  audio.preload = 'auto';
+  return audio;
+}
+
+const bgmAudio = createAudio('./audio/bgm/Main Theme - Microsoft Minesweeper [7I9E6Enw1R0].mp3');
+bgmAudio.loop = true;
+bgmAudio.volume = 0.3;
+const explosionAudio = createAudio('./audio/explosion/Explosion (Rocket shot._wav) - Classic Time Bomb - Roblox [hIN1qtijSCo].mp3');
+const victoryAudio = createAudio('./audio/victory/Windows 3.1 - Tada [QDUv_8Dw-Mw].mp3');
+let bgmStarted = false;
+
+bgmAudio.addEventListener('error', () => {
+  console.error('BGM 讀取錯誤:', bgmAudio.error && bgmAudio.error.message);
+});
+explosionAudio.addEventListener('error', () => {
+  console.error('爆炸音效讀取錯誤:', explosionAudio.error && explosionAudio.error.message);
+});
+victoryAudio.addEventListener('error', () => {
+  console.error('勝利音效讀取錯誤:', victoryAudio.error && victoryAudio.error.message);
+});
+
+function playBgm() {
+  if (!bgmStarted || bgmAudio.paused) {
+    bgmAudio.play().then(() => {
+      bgmStarted = true;
+    }).catch((error) => {
+      console.warn('BGM 無法播放:', error);
+    });
+  }
+}
+
+function pauseBgm() {
+  if (!bgmAudio.paused) {
+    bgmAudio.pause();
+  }
+}
+
+function playEffect(effectAudio) {
+  pauseBgm();
+  effectAudio.currentTime = 0;
+
+  const resumeBgm = () => {
+    effectAudio.removeEventListener('ended', resumeBgm);
+    playBgm();
+  };
+
+  effectAudio.addEventListener('ended', resumeBgm);
+  effectAudio.play().catch(() => {
+    playBgm();
+  });
+}
 
 const sizes = {
   '6x6': 6,
@@ -184,14 +266,20 @@ function getCellElement(r, c) {
 // 遊戲結束後顯示結果，並揭開所有地雷位子
 function endGame(win) {
   gameOver = true;
+  if (!statsRecorded) {
+    notifyGamePlayed('minesweeper', {success: !!win});
+    statsRecorded = true;
+  }
   revealAllMines();
   resultModal.classList.add('active');
   if (win) {
     resultTitle.textContent = '🎉 勝利！';
     resultDetail.textContent = '你已成功掃除所有非地雷格子。';
+    playEffect(victoryAudio);
   } else {
     resultTitle.textContent = '💥 失敗！';
     resultDetail.textContent = '很遺憾，你踩到地雷了。';
+    playEffect(explosionAudio);
   }
 }
 
@@ -224,6 +312,7 @@ function resetGame() {
   cells = [];
   gameOver = false;
   revealedCount = 0;
+  statsRecorded = false;
 }
 
 // 連接尺寸按鈕事件，建立新遊戲
@@ -231,6 +320,7 @@ document.querySelectorAll('.size-buttons button').forEach(button => {
   button.addEventListener('click', () => {
     const r = Number(button.dataset.rows);
     const c = Number(button.dataset.cols);
+    playBgm();
     createGrid(r, c);
   });
 });

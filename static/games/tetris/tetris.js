@@ -9,6 +9,34 @@ const ratingElement = document.getElementById('finalRating');
 const ratingMessage = document.getElementById('ratingMessage');
 const bgMusic = document.getElementById('bgMusic');
 const restartButton = document.getElementById('restartBtn');
+let statsRecorded = false;
+
+//呼叫父頁markGamePlayed(...) or 直接更新 localStorage or 發送 /api/game-stats 給後端
+
+function notifyGamePlayed(gameId, details) {
+  try {
+    if (window.parent && window.parent !== window && typeof window.parent.markGamePlayed === 'function') {
+      window.parent.markGamePlayed(gameId, details);
+      return;
+    }
+    if (window.opener && typeof window.opener.markGamePlayed === 'function') {
+      window.opener.markGamePlayed(gameId, details);
+      return;
+    }
+    const played = JSON.parse(localStorage.getItem('playedGames') || '[]');
+    if (!played.includes(gameId)) {
+      played.push(gameId);
+      localStorage.setItem('playedGames', JSON.stringify(played));
+    }
+    fetch('/api/game-stats', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ tetris_lines_cleared: {op:'inc', val: Number(details && details.lines) || 0} })
+    }).catch(() => {});
+  } catch (err) {
+    console.warn('notifyGamePlayed error', err);
+  }
+}
 
 const scale = 24;
 canvas.width = 10 * scale;
@@ -347,6 +375,10 @@ function getRating(score) {
 }
 
 function showGameOver() {
+  if (!statsRecorded) {
+    statsRecorded = true;
+    notifyGamePlayed('tetris', {lines: player.lines});
+  }
   const rating = getRating(player.score);
   finalScore.textContent = player.score;
   ratingElement.textContent = rating;
@@ -359,6 +391,7 @@ function showGameOver() {
 }
 
 function resetGame() {
+  statsRecorded = false;
   arena.forEach(row => row.fill(0));
   player.score = 0;
   player.level = 0;

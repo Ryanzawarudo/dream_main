@@ -62,6 +62,22 @@ def init_account_db():
     )
     ''')
 
+    # 使用者遊戲統計表（每位使用者一列）
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user_game_stats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE,
+        angry_corrected INTEGER DEFAULT 0,
+        electric_success INTEGER DEFAULT 0,
+        electric_fail INTEGER DEFAULT 0,
+        mines_success INTEGER DEFAULT 0,
+        mines_fail INTEGER DEFAULT 0,
+        popfat_max_kg REAL DEFAULT 0,
+        tetris_lines_cleared INTEGER DEFAULT 0,
+        updated_at TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+    ''')
     # 預設測試帳號（如果尚未存在）
     cursor.execute('SELECT id FROM users WHERE email = ?', ('test@gmail.com',))
     if cursor.fetchone() is None:
@@ -334,6 +350,138 @@ def ensure_dreams_table_schema():
     conn.close()
 
 ensure_dreams_table_schema()
+
+
+def ensure_user_game_stats_table_schema():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('PRAGMA table_info(user_game_stats)')
+    columns = [row[1] for row in cursor.fetchall()]
+
+    # If table doesn't exist, create it (defensive)
+    if not columns:
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_game_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE,
+            angry_corrected INTEGER DEFAULT 0,
+            electric_success INTEGER DEFAULT 0,
+            electric_fail INTEGER DEFAULT 0,
+            mines_success INTEGER DEFAULT 0,
+            mines_fail INTEGER DEFAULT 0,
+            popfat_max_kg REAL DEFAULT 0,
+            tetris_lines_cleared INTEGER DEFAULT 0,
+            updated_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        ''')
+        conn.commit()
+    conn.close()
+
+
+ensure_user_game_stats_table_schema()
+
+
+def get_or_create_user_stats(user_id):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM user_game_stats WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    if row:
+        result = dict(row)
+        conn.close()
+        return result
+
+    # create default
+    cursor.execute('''
+    INSERT INTO user_game_stats (user_id) VALUES (?)
+    ''', (user_id,))
+    conn.commit()
+    cursor.execute('SELECT * FROM user_game_stats WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    result = dict(row) if row else None
+    conn.close()
+    return result
+
+
+# GET current user's game stats
+@app.route('/api/game-stats', methods=['GET'])
+def api_get_game_stats():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify(success=False, message='請先登入'), 401
+
+    try:
+        stats = get_or_create_user_stats(user_id)
+        # remove internal id and user_id duplication for client
+        if stats and 'user_id' in stats:
+            stats.pop('id', None)
+        return jsonify(success=True, stats=stats)
+    except Exception as e:
+        return jsonify(success=False, message=f'無法取得統計: {e}'), 500
+
+
+# POST update: accepts payload like {"angry_corrected": {"op":"inc","val":1}, "popfat_max_kg": {"op":"max","val":2.3}}
+@app.route('/api/game-stats', methods=['POST'])
+def api_update_game_stats():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify(success=False, message='請先登入'), 401
+
+    data = request.get_json() or {}
+    if not isinstance(data, dict) or not data:
+        return jsonify(success=False, message='缺少更新資料'), 400
+
+    allowed = {
+        'angry_corrected': 'INTEGER',
+        'electric_success': 'INTEGER',
+        'electric_fail': 'INTEGER',
+        'mines_success': 'INTEGER',
+        'mines_fail': 'INTEGER',
+        'popfat_max_kg': 'REAL',
+        'tetris_lines_cleared': 'INTEGER'
+    }
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        for key, payload in data.items():
+            if key not in allowed:
+                continue
+
+            # normalize payload
+            op = None
+            val = None
+            if isinstance(payload, dict):
+                op = payload.get('op')
+                val = payload.get('val')
+            elif isinstance(payload, (int, float)):
+                op = 'inc'
+                val = payload
+            else:
+                continue
+
+            if op == 'inc':
+                cursor.execute(f'UPDATE user_game_stats SET {key} = COALESCE({key},0) + ?, updated_at = datetime(\'now\',\'localtime\') WHERE user_id = ?', (val, user_id))
+            elif op == 'set':
+                cursor.execute(f'UPDATE user_game_stats SET {key} = ?, updated_at = datetime(\'now\',\'localtime\') WHERE user_id = ?', (val, user_id))
+            elif op == 'max' and val is not None:
+                cursor.execute(f'UPDATE user_game_stats SET {key} = CASE WHEN ? > COALESCE({key},0) THEN ? ELSE {key} END, updated_at = datetime(\'now\',\'localtime\') WHERE user_id = ?', (val, val, user_id))
+            else:
+                # unknown op -> skip
+                continue
+
+        conn.commit()
+        conn.close()
+
+        stats = get_or_create_user_stats(user_id)
+        if stats and 'user_id' in stats:
+            stats.pop('id', None)
+        return jsonify(success=True, stats=stats)
+    except Exception as e:
+        return jsonify(success=False, message=f'更新失敗: {e}'), 500
 
 
 def save_dream_to_db(user_id, dream, reality=None, emotion=None, analysis=None, image_path=None, dream_date=None, emotion_details=None):

@@ -4,6 +4,7 @@ class PopCatGame {
         this.timeLeft = 15;
         this.isGameActive = false;
         this.gameTimer = null;
+        this.statsRecorded = false;
 
         this.clickTimestamps = [];
         this.clickRateHistory = [];
@@ -85,6 +86,7 @@ class PopCatGame {
     }
 
     resetAndStart() {
+        this.statsRecorded = false;
         this.resetGameState();
         this.startGame();
     }
@@ -260,6 +262,10 @@ class PopCatGame {
     }
 
     endGame() {
+        if (!this.statsRecorded) {
+            this.statsRecorded = true;
+            notifyGamePlayed('popfat', {kg: this.clickCount});
+        }
         this.isGameActive = false;
         clearInterval(this.gameTimer);
         if (this.chartUpdateInterval) {
@@ -285,6 +291,32 @@ class PopCatGame {
     playSound() {
         const audio = new Audio('assets/sounds/pop.mp3');
         audio.play();
+    }
+}
+
+//呼叫父頁markGamePlayed(...) or 直接更新 localStorage or 發送 /api/game-stats 給後端
+function notifyGamePlayed(gameId, details) {
+    try {
+        if (window.parent && window.parent !== window && typeof window.parent.markGamePlayed === 'function') {
+            window.parent.markGamePlayed(gameId, details);
+            return;
+        }
+        if (window.opener && typeof window.opener.markGamePlayed === 'function') {
+            window.opener.markGamePlayed(gameId, details);
+            return;
+        }
+        const played = JSON.parse(localStorage.getItem('playedGames') || '[]');
+        if (!played.includes(gameId)) {
+            played.push(gameId);
+            localStorage.setItem('playedGames', JSON.stringify(played));
+        }
+        fetch('/api/game-stats', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ popfat_max_kg: {op:'max', val: Number(details && details.kg) || 0} })
+        }).catch(() => {});
+    } catch (err) {
+        console.warn('notifyGamePlayed error', err);
     }
 }
 
