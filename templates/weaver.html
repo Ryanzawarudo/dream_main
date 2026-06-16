@@ -694,6 +694,7 @@ majorPos.forEach(([lx,ty])=>{
             }
 
             // 保留原有內容，在末尾加入新識別的文本
+            // 根據哪個麥克風按鈕被點擊，決定附加到夢境還是現實欄位
             const currentText = targetTextarea.value;
             if (currentText && !currentText.endsWith(" ")) {
               targetTextarea.value = currentText + " " + finalTranscript.trim();

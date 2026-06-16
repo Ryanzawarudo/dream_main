@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+    <!-- 載入外部樣式表（Flask 的 static 路徑） -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,18 +9,28 @@
 </head>
 <body>
 
-    <!-- 神經網絡 Canvas 背景 -->
+    <!-- ============================================================
+         背景視覺特效區
+         以下幾個元素彼此疊在一起，組成整個頁面的氛圍背景：
+         1. neural-canvas：用 JS 畫的神經網絡動畫（節點 + 連線 + 脈衝光點）
+         2. star-layer：隨機生成的閃爍星點
+         3. ambient-orb：三顆漂浮的光球（純 CSS 動畫）
+         4. sigil-bg：六芒星水印 SVG，純裝飾用
+         全部加上 aria-hidden="true"，因為對螢幕閱讀器沒有意義
+    ============================================================ -->
+
+    <!-- 神經網絡 Canvas 背景：由下方 <script> 區塊的 IIFE 負責繪製動畫 -->
     <canvas id="neural-canvas" aria-hidden="true"></canvas>
 
-    <!-- 星點背景 -->
+    <!-- 星點背景：容器，星星元素會由 JS 動態 append 進來 -->
     <div id="star-layer" aria-hidden="true"></div>
 
-    <!-- 環境光球 -->
+    <!-- 環境光球：三顆，純 CSS keyframe 動畫飄浮，增加深度感 -->
     <div class="ambient-orb one" aria-hidden="true"></div>
     <div class="ambient-orb two" aria-hidden="true"></div>
     <div class="ambient-orb three" aria-hidden="true"></div>
 
-    <!-- 六芒星水印 -->
+    <!-- 六芒星水印：兩個三角形疊出大衛之星造型，搭配同心圓裝飾 -->
     <svg class="sigil-bg" viewBox="0 0 200 200" aria-hidden="true">
         <polygon points="100,10 190,155 10,155" fill="none" stroke="rgba(155,120,255,1)" stroke-width="0.8"/>
         <polygon points="100,190 10,45 190,45" fill="none" stroke="rgba(155,120,255,1)" stroke-width="0.8"/>
@@ -28,9 +39,14 @@
         <circle cx="100" cy="100" r="28" fill="none" stroke="rgba(155,120,255,.3)" stroke-width="0.5"/>
     </svg>
 
-    <!-- 頂部導航列 -->
+    <!-- ============================================================
+         頂部導航列（Header）
+         包含：左側 Logo、中間導航連結、右側帳號區域（頭像 + 登入/登出按鈕）
+    ============================================================ -->
     <header class="top-navbar" role="banner">
+        <!-- 網站 Logo，點擊回首頁 -->
         <a href="/" class="nav-logo active" aria-label="回到首頁" id="navLogo">
+            <!-- 兩個三角形組成的六芒星 icon -->
             <svg class="nav-logo-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <polygon points="12,2 22,19 2,19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
                 <polygon points="12,22 2,5 22,5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
@@ -38,37 +54,46 @@
             <span class="nav-logo-text">DREAM</span>
             <span class="nav-logo-sub">潛意識觀測系統</span>
         </a>
+
+        <!-- 主要功能導航 -->
         <nav class="nav-links" aria-label="主要導航">
             <a href="/weaver" class="nav-link">夢境編織室</a>
             <a href="/data" class="nav-link">心靈數據室</a>
             <a href="/capsule" class="nav-link">情緒圖表</a>
         </nav>
-        <div id="topAuthArea" class="top-auth-area" role="navigation" aria-label="帳號管理">
-    <div class="nav-avatar-link" id="navAvatarWrapper" title="帳號選單" aria-label="帳號選單" style="cursor:pointer;">
-        <div id="navAvatarInner" class="nav-avatar-inner">?</div>
 
-        <!-- 下拉選單：登入後顯示 dashboard 資訊 -->
-        <div class="user-dropdown" id="userDropdown">
-            <div class="user-dropdown-name" id="ddUsername">訪客</div>
-            <div class="user-dropdown-item">
-                <span class="db-icon">🌙</span>
-                <span id="dbDreamCount">載入中…</span>
+        <!-- 右上角帳號區域：頭像 + 下拉選單 + 登入/登出按鈕 -->
+        <div id="topAuthArea" class="top-auth-area" role="navigation" aria-label="帳號管理">
+            <div class="nav-avatar-link" id="navAvatarWrapper" title="帳號選單" aria-label="帳號選單" style="cursor:pointer;">
+                <!-- 頭像圓圈：未登入時顯示 emoji，登入後嘗試顯示大頭照（見 updateTopButton） -->
+                <div id="navAvatarInner" class="nav-avatar-inner">?</div>
+
+                <!-- 點擊頭像後彈出的下拉選單：顯示使用者名稱、夢境統計、個人資料連結 -->
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-name" id="ddUsername">訪客</div>
+                    <div class="user-dropdown-item">
+                        <span class="db-icon">🌙</span>
+                        <span id="dbDreamCount">載入中…</span>
+                    </div>
+                    <div class="user-dropdown-item">
+                        <span class="db-icon">📅</span>
+                        <span id="dbLastDate">—</span>
+                    </div>
+                    <div class="user-dropdown-item" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+                        <a href="/profile" style="color:rgba(180,150,255,0.85); text-decoration:none; font-size:0.82rem;">前往個人資料 →</a>
+                    </div>
+                </div>
             </div>
-            <div class="user-dropdown-item">
-                <span class="db-icon">📅</span>
-                <span id="dbLastDate">—</span>
-            </div>
-            <div class="user-dropdown-item" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
-                <a href="/profile" style="color:rgba(180,150,255,0.85); text-decoration:none; font-size:0.82rem;">前往個人資料 →</a>
-            </div>
+            <!-- 訪客模式 / Hello,使用者名稱 文字 -->
+            <span id="topUserName" class="top-user-name" aria-live="polite">訪客模式</span>
+            <!-- 登入 / 登出 按鈕，文字與行為由 updateTopButton() 動態切換 -->
+            <button id="topLoginButton" class="top-login-button" aria-label="登入帳號">登入</button>
         </div>
-        </div>
-        <span id="topUserName" class="top-user-name" aria-live="polite">訪客模式</span>
-        <button id="topLoginButton" class="top-login-button" aria-label="登入帳號">登入</button>
-    </div>
     </header>
 
-    <!-- 頁尾 -->
+    <!-- ============================================================
+         頁尾（Footer）
+    ============================================================ -->
     <footer class="site-footer" aria-label="頁尾資訊">
         <div class="footer-inner">
             <span class="footer-logo">⬡ DREAM</span>
@@ -83,13 +108,21 @@
         </div>
     </footer>
 
+    <!-- ============================================================
+         主要內容區（Main）
+         這是一個「單頁應用（SPA）風格」的網站：
+         所有「頁面」都是同一份 HTML 裡的 <section class="panel">，
+         透過 JS 監聽 URL 的 hash（#login、#signup、#forgot）來切換顯示哪個 panel，
+         而不是真的跳轉到不同網址（見下方 showPage() / routeFromHash()）。
+    ============================================================ -->
     <main class="content">
 
-        <!-- ===== 大廳 ===== -->
+        <!-- ===== 大廳（首頁主畫面） ===== -->
         <section id="hall" class="panel active visible" aria-label="主頁大廳">
             <div class="hall-wrap">
 
                 <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                    <!-- 登入後才顯示的狀態膠囊列：使用者名稱 / 已記錄夢境數 / 最近紀錄日期 -->
                     <div id="dashboardBar" class="dashboard-bar" style="display:none;" aria-live="polite">
                         <div class="db-item">
                             <span class="db-icon">👤</span>
@@ -107,29 +140,34 @@
                         </div>
                     </div>
 
+                    <!-- 標題上方的小標籤 -->
                     <div class="hall-eyebrow" aria-hidden="true">
                         <div class="eyebrow-dot"></div>
                         Subconscious Observation System
                     </div>
                 </div>
 
+                <!-- 主標題 -->
                 <h1 class="hall-title">進入你的<br><span>夢境觀測站</span></h1>
                 <p class="hall-sub">記錄、解析、探索潛意識深處的訊號與符號</p>
 
+                <!-- 錨點連結，點擊後平滑捲動到下方功能卡片區 -->
                 <a href="#feature-cards" class="hero-cta" id="heroCta">
                     開始觀測
                     <span class="hero-cta-arrow">↓</span>
                 </a>
 
+                <!-- 標題下方的裝飾線條（左線 + 寶石點 + 右線），純視覺 -->
                 <div class="title-deco" aria-hidden="true">
                     <div class="dl"></div>
                     <div class="dgem"></div>
                     <div class="dr"></div>
                 </div>
 
+                <!-- 功能卡片區：四張卡片組成的 grid -->
                 <div class="action-grid" role="list" id="feature-cards">
 
-                    <!-- 夢境編織室：主 CTA，橫跨全寬 -->
+                    <!-- 夢境編織室：主要 CTA 卡片，橫跨全寬，不需要登入即可進入 -->
                     <a href="/weaver" class="action-card c-purple card-hero" role="listitem">
                         <div class="card-glow-spot"></div>
                         <div class="card-hero-inner">
@@ -147,7 +185,8 @@
                         </div>
                     </a>
 
-                    <!-- 心靈數據室 -->
+                    <!-- 心靈數據室：data-auth-required 代表「需要登入」，
+                         未登入時點擊會被下方 JS 攔截並顯示 Toast 提示，不會真的跳頁 -->
                     <a href="/data" class="action-card c-cyan" role="listitem" data-auth-required>
                         <div class="card-glow-spot"></div>
                         <span class="card-tag">Data · Archive</span>
@@ -160,7 +199,7 @@
                         </div>
                     </a>
 
-                    <!-- 情緒輪廓圖表 -->
+                    <!-- 情緒輪廓圖表：不需登入即可瀏覽 -->
                     <a href="/capsule" class="action-card c-pink" role="listitem">
                         <div class="card-glow-spot"></div>
                         <span class="card-tag">Emotion · Map</span>
@@ -173,36 +212,36 @@
                         </div>
                     </a>
 
-                    <!-- 隨機靈感投遞 -->
+                    <!-- 隨機靈感投遞：純前端功能，點擊後從關鍵詞庫隨機組句並打字機顯示 -->
                     <button
-                    id="inspireBtn"
-                    class="action-card c-gold"
-                    role="listitem"
-                    aria-label="點擊獲取隨機夢境靈感"
-                >
-                    <div class="card-glow-spot"></div>
-                    <span class="card-tag">Spark · Random</span>
-                    <div class="card-icon" aria-hidden="true">✨</div>
-                    <div class="card-title">隨機靈感投遞</div>
-                    <div class="card-desc">隨機組合夢境關鍵詞，喚醒今日記錄的靈感</div>
-                    <div class="card-footer">
-                        <span class="card-badge">即時生成</span>
-                        <span class="card-arrow" aria-hidden="true">→</span>
-                    </div>
-                </button>
+                        id="inspireBtn"
+                        class="action-card c-gold"
+                        role="listitem"
+                        aria-label="點擊獲取隨機夢境靈感"
+                    >
+                        <div class="card-glow-spot"></div>
+                        <span class="card-tag">Spark · Random</span>
+                        <div class="card-icon" aria-hidden="true">✨</div>
+                        <div class="card-title">隨機靈感投遞</div>
+                        <div class="card-desc">隨機組合夢境關鍵詞，喚醒今日記錄的靈感</div>
+                        <div class="card-footer">
+                            <span class="card-badge">即時生成</span>
+                            <span class="card-arrow" aria-hidden="true">→</span>
+                        </div>
+                    </button>
 
-                <!-- 靈感輸出：移到卡片正下方，視覺上仍是獨立區塊但更貼近卡片 -->
+                    <!-- 靈感輸出區放在卡片正下方，視覺上更貼近觸發按鈕 -->
 
                 </div>
 
-                <!-- 訪客 Toast -->
+                <!-- 訪客提示 Toast：未登入卻點擊需要登入的功能時彈出 -->
                 <div id="authToast" class="auth-toast" role="alert" aria-live="assertive">
                     <span id="authToastMsg">請先登入才能使用此功能</span>
                     <a href="#login" class="auth-toast-btn" id="authToastBtn">立即登入</a>
                     <button class="auth-toast-close" id="authToastClose" aria-label="關閉">✕</button>
                 </div>
 
-                <!-- 靈感輸出 -->
+                <!-- 靈感輸出區：inspireBtn 點擊後，文字會以打字機效果顯示在這裡 -->
                 <div
                     id="inspirationOutput"
                     class="inspiration-box"
@@ -216,11 +255,12 @@
             </div>
         </section>
 
-        <!-- ===== 登入頁面 ===== -->
+        <!-- ===== 登入頁面（#login） ===== -->
         <section id="page-login" class="panel" aria-label="登入系統">
             <div class="auth-wrap">
                 <div class="auth-panel">
                     <div class="auth-panel-eyebrow">Subconscious Observation System</div>
+                    <!-- 鎖頭圖示 -->
                     <div class="auth-icon-wrap">
                         <div class="auth-icon-badge">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -232,11 +272,14 @@
                     </div>
                     <span class="auth-title">使用者登入</span>
                     <p class="auth-subtitle">請輸入已註冊的電子郵件與密碼</p>
+                    <!-- 登入 / 註冊 分頁切換（純連結，靠 hash 路由） -->
                     <div class="auth-tabs">
                         <a href="#signup" class="auth-tab">註冊</a>
                         <a href="#login" class="auth-tab active">登入</a>
                     </div>
                     <p class="form-note">使用 Email 與密碼登入，繼續你的潛意識探索。</p>
+
+                    <!-- 登入表單，submit 事件交給 handleLogin() 處理（呼叫 /api/login） -->
                     <form id="loginForm" class="auth-form" novalidate>
                         <div class="form-field">
                             <label for="loginEmail">Email</label>
@@ -261,6 +304,7 @@
                             >
                         </div>
                         <button type="submit" class="primary-button">進入系統</button>
+                        <!-- 顯示登入成功 / 失敗訊息 -->
                         <div id="loginMessage" class="validation-message" role="alert"></div>
                     </form>
                     <div class="auth-footer">
@@ -271,11 +315,12 @@
             </div>
         </section>
 
-        <!-- ===== 註冊頁面 ===== -->
+        <!-- ===== 註冊頁面（#signup） ===== -->
         <section id="page-signup" class="panel" aria-label="建立新帳號">
             <div class="auth-wrap">
                 <div class="auth-panel">
                     <div class="auth-panel-eyebrow">Subconscious Observation System</div>
+                    <!-- 使用者新增圖示 -->
                     <div class="auth-icon-wrap">
                         <div class="auth-icon-badge">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -292,6 +337,8 @@
                         <a href="#login" class="auth-tab">登入</a>
                     </div>
                     <p class="form-note">帳號將用於存取 Subconscious Observation System。</p>
+
+                    <!-- 註冊表單，submit 交給 handleSignup() 處理（呼叫 /api/signup） -->
                     <form id="signupForm" class="auth-form" novalidate>
                         <div class="form-field">
                             <label for="signupUsername">Username</label>
@@ -337,8 +384,10 @@
                                 required
                             >
                         </div>
+                        <!-- 即時顯示「密碼是否一致」的提示，由 setupPasswordMatchValidation() 監聽 input -->
                         <div id="signupValidation" class="validation-message" role="alert"></div>
                         <button id="signupButton" type="submit" class="primary-button">建立帳號</button>
+                        <!-- 顯示送出後 API 回應的成功 / 失敗訊息 -->
                         <div id="signupMessage" class="validation-message" role="alert"></div>
                     </form>
                     <div class="auth-footer">
@@ -348,11 +397,16 @@
             </div>
         </section>
 
-        <!-- ===== 忘記密碼頁面 ===== -->
+        <!-- ===== 忘記密碼頁面（#forgot） =====
+             分兩階段（stage1 / stage2）：
+             stage1：輸入 Email，要求後端寄送驗證碼
+             stage2：輸入驗證碼 + 新密碼，完成重設
+        -->
         <section id="page-forgot" class="panel" aria-label="重設密碼">
             <div class="auth-wrap">
                 <div class="auth-panel">
                     <div class="auth-panel-eyebrow">Subconscious Observation System</div>
+                    <!-- 鑰匙圖示 -->
                     <div class="auth-icon-wrap">
                         <div class="auth-icon-badge">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -365,6 +419,7 @@
                     <p class="auth-subtitle">透過 Email 驗證碼重新設定你的密碼</p>
                     <div class="auth-divider"></div>
 
+                    <!-- 階段一：輸入 Email 要求寄送驗證碼 -->
                     <div id="forgotStage1" class="forgot-stage active">
                         <p class="form-note">輸入註冊 Email，我們將寄送驗證碼至你的信箱。</p>
                         <form id="forgotEmailForm" class="auth-form" novalidate>
@@ -379,11 +434,14 @@
                                     required
                                 >
                             </div>
+                            <!-- 注意：type="button" 而非 submit，因為這個表單本身不送出，
+                                 而是由 sendVerificationCode() 透過按鈕 click 事件呼叫 /api/forgot-password -->
                             <button id="sendCodeButton" type="button" class="primary-button">寄送驗證碼</button>
                             <div id="forgotEmailMessage" class="validation-message" role="alert"></div>
                         </form>
                     </div>
 
+                    <!-- 階段二：輸入驗證碼 + 設定新密碼 -->
                     <div id="forgotStage2" class="forgot-stage">
                         <p class="form-note">請輸入信箱中的 6 位數驗證碼，並設定新密碼。</p>
                         <form id="resetPasswordForm" class="auth-form" novalidate>
@@ -422,6 +480,7 @@
                                     required
                                 >
                             </div>
+                            <!-- 即時顯示「新密碼是否一致」，由 setupForgotPasswordValidation() 監聽 -->
                             <div id="resetValidation" class="validation-message" role="alert"></div>
                             <button id="resetPasswordButton" type="submit" class="primary-button">確認重設密碼</button>
                             <div id="resetPasswordMessage" class="validation-message" role="alert"></div>
@@ -438,21 +497,32 @@
     </main>
 
     <script>
-        /* ===== 神經網絡動畫 ===== */
+        /* ============================================================
+           神經網絡背景動畫
+           用 <canvas> 畫出一群會緩慢漂浮的節點（node），
+           節點之間距離夠近時用半透明線連接，
+           並每隔一段時間隨機從某節點往鄰居節點發送一個「脈衝光點」，
+           營造出「神經傳導」的視覺效果。
+           整段包在 IIFE 中避免污染全域變數。
+        ============================================================ */
         (function () {
             const canvas = document.getElementById('neural-canvas');
-            if (!canvas) return;
+            if (!canvas) return; // 找不到 canvas 就直接放棄，避免報錯
             const ctx = canvas.getContext('2d');
-            const NODE_COUNT = 55;
-            const LINK_DIST = 160;
-            const PULSE_INTERVAL = 2800;
+
+            const NODE_COUNT = 55;       // 節點總數
+            const LINK_DIST = 160;       // 兩節點距離小於此值才連線
+            const PULSE_INTERVAL = 2800; // 每隔多少毫秒產生一次脈衝
+
             let nodes = [], pulses = [], W, H, raf;
 
+            // 依視窗大小重設 canvas 解析度
             function resize() {
                 W = canvas.width = window.innerWidth;
                 H = canvas.height = window.innerHeight;
             }
 
+            // 初始化所有節點：隨機位置、隨機微小速度、隨機半徑
             function initNodes() {
                 nodes = [];
                 for (let i = 0; i < NODE_COUNT; i++) {
@@ -466,24 +536,27 @@
                 }
             }
 
+            // 隨機挑一個節點 a，再從它「夠近的鄰居」中挑一個 b，
+            // 產生一筆從 a 飄向 b 的脈衝資料（t 從 0 跑到 1 代表動畫進度）
             function spawnPulse() {
                 const i = Math.floor(Math.random() * nodes.length);
                 const a = nodes[i];
-                // 找 a 的鄰居
                 const neighbors = nodes.filter((b, j) => j !== i && dist(a, b) < LINK_DIST);
-                if (neighbors.length === 0) return;
+                if (neighbors.length === 0) return; // 沒有夠近的鄰居就跳過這次
                 const b = neighbors[Math.floor(Math.random() * neighbors.length)];
                 pulses.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, t: 0 });
             }
 
+            // 計算兩點歐幾里得距離
             function dist(a, b) {
                 return Math.hypot(a.x - b.x, a.y - b.y);
             }
 
+            // 每一個 animation frame 都會執行的主繪圖函式
             function draw() {
                 ctx.clearRect(0, 0, W, H);
 
-                // 畫連線
+                // 1) 畫節點之間的連線：距離越近，線越明顯（alpha 越高）
                 for (let i = 0; i < nodes.length; i++) {
                     for (let j = i + 1; j < nodes.length; j++) {
                         const d = dist(nodes[i], nodes[j]);
@@ -499,7 +572,7 @@
                     }
                 }
 
-                // 畫節點
+                // 2) 畫節點本身（小圓點）
                 nodes.forEach(n => {
                     ctx.beginPath();
                     ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
@@ -507,18 +580,23 @@
                     ctx.fill();
                 });
 
-                // 畫脈衝
+                // 3) 畫脈衝光點：先濾掉已經跑完（t > 1）的脈衝，
+                //    再讓每個剩下的脈衝沿著 a→b 的直線移動，並疊加光暈漸層
                 pulses = pulses.filter(p => p.t <= 1);
                 pulses.forEach(p => {
                     p.t += 0.012;
                     const px = p.ax + (p.bx - p.ax) * p.t;
                     const py = p.ay + (p.by - p.ay) * p.t;
+                    // 用 sin 讓透明度「先亮後暗」，模擬脈衝強弱變化
                     const alpha = Math.sin(p.t * Math.PI) * 0.75;
+
+                    // 光點本體
                     ctx.beginPath();
                     ctx.arc(px, py, 2.2, 0, Math.PI * 2);
                     ctx.fillStyle = `rgba(123,220,255,${alpha})`;
                     ctx.fill();
-                    // 光暈
+
+                    // 光點外圍的放射狀光暈
                     const grd = ctx.createRadialGradient(px, py, 0, px, py, 10);
                     grd.addColorStop(0, `rgba(123,220,255,${alpha * 0.4})`);
                     grd.addColorStop(1, 'rgba(123,220,255,0)');
@@ -528,24 +606,30 @@
                     ctx.fill();
                 });
 
-                // 更新節點位置
+                // 4) 更新節點位置：碰到邊界就反彈（速度方向反轉）
                 nodes.forEach(n => {
                     n.x += n.vx; n.y += n.vy;
                     if (n.x < 0 || n.x > W) n.vx *= -1;
                     if (n.y < 0 || n.y > H) n.vy *= -1;
                 });
 
-                raf = requestAnimationFrame(draw);
+                raf = requestAnimationFrame(draw); // 持續循環下一幀
             }
 
+            // 初始化流程：設定尺寸 → 建立節點 → 開始繪圖迴圈
             resize();
             initNodes();
             draw();
-            setInterval(spawnPulse, PULSE_INTERVAL);
-            window.addEventListener('resize', () => { resize(); initNodes(); });
+            setInterval(spawnPulse, PULSE_INTERVAL); // 定時觸發新的脈衝
+            window.addEventListener('resize', () => { resize(); initNodes(); }); // 視窗縮放時重新初始化
         })();
 
-        /* ===== 星點生成 ===== */
+        /* ============================================================
+           星點背景生成
+           動態建立 65 個小圓點（.st），透過 inline style 隨機設定
+           大小 / 位置 / 動畫時間與延遲，讓星星閃爍速度錯落不一致。
+           實際閃爍動畫由 CSS 的 @keyframes 控制（搭配 --peak 變數）。
+        ============================================================ */
         (function () {
             const layer = document.getElementById('star-layer');
             if (!layer) return;
@@ -559,89 +643,108 @@
                     `height:${sz}px`,
                     `left:${Math.random() * 100}%`,
                     `top:${Math.random() * 100}%`,
-                    `--peak:${0.5 + Math.random() * 0.5}`,
-                    `animation-duration:${2.8 + Math.random() * 5}s`,
-                    `animation-delay:-${Math.random() * 8}s`
+                    `--peak:${0.5 + Math.random() * 0.5}`,            // 最大亮度
+                    `animation-duration:${2.8 + Math.random() * 5}s`,  // 閃爍週期
+                    `animation-delay:-${Math.random() * 8}s`           // 負延遲讓初始狀態錯開
                 ].join(';');
                 layer.appendChild(s);
             }
         })();
 
-        /* ===== 應用程式邏輯 ===== */
+        /* ============================================================
+           應用程式主邏輯
+           以下都是「真正的功能程式碼」：登入狀態管理、API 串接、
+           頁面路由（hash-based SPA）、表單驗證、靈感生成等。
+        ============================================================ */
         const API_BASE = '/api';
-        let currentUser = null;
+        let currentUser = null; // 目前登入的使用者物件；未登入則為 null
 
+        /* ---- 登入狀態相關 ---- */
+
+        // 向後端查詢目前 session 是否已登入，並更新 currentUser，
+        // 然後同步更新頂部按鈕與 dashboard 顯示。
+        // 在頁面載入時（DOMContentLoaded）呼叫一次。
         async function refreshSession() {
             try {
                 const response = await fetch(`${API_BASE}/session`, { method: 'GET' });
                 const result = await response.json();
                 currentUser = (result.success && result.user) ? result.user : null;
             } catch (e) {
-                currentUser = null;
+                currentUser = null; // 網路錯誤時保守視為未登入
             }
             updateTopButton();
             updateDashboard();
         }
 
-        /* Dashboard 資訊條（登入後顯示） */
+        /* Dashboard 資訊（登入後顯示在頭像下拉選單 + 首頁膠囊列） */
         async function updateDashboard() {
-        const ddName = document.getElementById('ddUsername');
-        if (!ddName) return;
-        if (!currentUser) {
-            ddName.textContent = '訪客';
-            document.getElementById('dbDreamCount').textContent = '請先登入';
-            document.getElementById('dbLastDate').textContent = '—';
-            return;
-        }
+            const ddName = document.getElementById('ddUsername');
+            if (!ddName) return;
 
-        ddName.textContent = currentUser.username || currentUser.email;
-
-        // 新增：同步顯示頂部膠囊狀態列
-        const bar = document.getElementById('dashboardBar');
-        if (bar) {
-            bar.style.display = 'flex';
-            document.getElementById('dbUsername').textContent = currentUser.username || currentUser.email;
-        }
-
-        try {
-            const res = await fetch(`${API_BASE}/emotion-data`);
-            const data = await res.json();
-            if (data.success) {
-                const mapping = data.mapping || {};
-                const seen = new Set();
-                let latestDate = null;
-                Object.values(mapping).forEach(list => {
-                    list.forEach(d => {
-                        const key = `${d.date}|${d.snippet}`;
-                        if (!seen.has(key)) {
-                            seen.add(key);
-                            if (d.date && (!latestDate || d.date > latestDate)) {
-                                latestDate = d.date;
-                            }
-                        }
-                    });
-                });
-                const count = seen.size;
-                document.getElementById('dbDreamCount').textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
-                document.getElementById('dbLastDate').textContent = latestDate ? `最近：${latestDate}` : '—';
-                const count2El = document.getElementById('dbDreamCount2');
-                const date2El = document.getElementById('dbLastDate2');
-                if (count2El) count2El.textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
-                if (date2El) date2El.textContent = latestDate ? `最近：${latestDate}` : '—';
+            // 未登入：顯示「訪客」與提示文字，不打 API
+            if (!currentUser) {
+                ddName.textContent = '訪客';
+                document.getElementById('dbDreamCount').textContent = '請先登入';
+                document.getElementById('dbLastDate').textContent = '—';
+                return;
             }
-        } catch(e) {
-            document.getElementById('dbDreamCount').textContent = '前往心靈數據室查看';
-            document.getElementById('dbLastDate').textContent = '—';
-        }
-    }
 
-        /* 靈感關鍵詞庫 */
+            ddName.textContent = currentUser.username || currentUser.email;
+
+            // 同步顯示首頁頂部的狀態膠囊列（dashboardBar）
+            const bar = document.getElementById('dashboardBar');
+            if (bar) {
+                bar.style.display = 'flex';
+                document.getElementById('dbUsername').textContent = currentUser.username || currentUser.email;
+            }
+
+            // 向後端拉取情緒資料，藉此推算「總共記錄了幾則夢境」與「最近一次紀錄日期」
+            try {
+                const res = await fetch(`${API_BASE}/emotion-data`);
+                const data = await res.json();
+                if (data.success) {
+                    const mapping = data.mapping || {};
+                    // 用 Set 搭配「日期+片段」當 key 去重複，避免同一筆夢境在不同情緒分類下被重複計算
+                    const seen = new Set();
+                    let latestDate = null;
+                    Object.values(mapping).forEach(list => {
+                        list.forEach(d => {
+                            const key = `${d.date}|${d.snippet}`;
+                            if (!seen.has(key)) {
+                                seen.add(key);
+                                if (d.date && (!latestDate || d.date > latestDate)) {
+                                    latestDate = d.date; // 字串比較日期（格式須為可排序的 YYYY-MM-DD）
+                                }
+                            }
+                        });
+                    });
+                    const count = seen.size;
+
+                    // 同時更新「下拉選單版」與「首頁膠囊列版」的兩組文字
+                    document.getElementById('dbDreamCount').textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
+                    document.getElementById('dbLastDate').textContent = latestDate ? `最近：${latestDate}` : '—';
+                    const count2El = document.getElementById('dbDreamCount2');
+                    const date2El = document.getElementById('dbLastDate2');
+                    if (count2El) count2El.textContent = count ? `已記錄 ${count} 則夢境` : '尚無紀錄';
+                    if (date2El) date2El.textContent = latestDate ? `最近：${latestDate}` : '—';
+                }
+            } catch (e) {
+                // API 失敗時給予替代文案，不讓畫面卡在「載入中」
+                document.getElementById('dbDreamCount').textContent = '前往心靈數據室查看';
+                document.getElementById('dbLastDate').textContent = '—';
+            }
+        }
+
+        /* ---- 隨機靈感投遞功能 ---- */
+
+        // 靈感關鍵詞庫：隨機靈感投遞會從這裡抽詞組句
         const dreamKeywords = [
             '月光軌跡', '星辰裂縫', '水晶迷宮', '記憶碎片', '幽夜花園',
             '風之回廊', '時間漩渦', '深海心聲', '銀色羽翼', '幻影之門',
             '鏡中倒影', '迷失燈塔', '雨後森林', '未竟之夢', '消失的橋'
         ];
 
+        // 從關鍵詞庫中不重複抽出 count 個詞（淺拷貝後用 splice 移除已抽出的項目）
         function getRandomKeywords(count) {
             const selected = [];
             const pool = [...dreamKeywords];
@@ -653,34 +756,32 @@
         }
 
         /* 靈感投遞 — 打字機效果 */
-        let typewriterTimer = null;
+        let typewriterTimer = null; // 記錄目前的 setTimeout，方便中途打斷重來
 
+        // 將 text 逐字輸出到 element，模擬打字機效果；
+        // 遇到中文標點符號時停頓更久（speed * 4），讓節奏更自然。
         function typewrite(element, text, speed = 42) {
-            // 清掉上一次未完成的動畫
-            if (typewriterTimer) clearTimeout(typewriterTimer);
+            if (typewriterTimer) clearTimeout(typewriterTimer); // 若上次動畫還沒打完，先取消
             element.textContent = '';
             element.classList.add('active');
-
-            // 加上閃爍游標
-            element.classList.add('typing');
+            element.classList.add('typing'); // 顯示閃爍游標的 CSS class
 
             let i = 0;
             function tick() {
                 if (i < text.length) {
                     element.textContent += text[i];
                     i++;
-                    // 標點符號停頓久一點，讓節奏有呼吸感
                     const ch = text[i - 1];
                     const pause = /[，。、—！？「」]/.test(ch) ? speed * 4 : speed;
                     typewriterTimer = setTimeout(tick, pause);
                 } else {
-                    // 打完後移除游標
-                    element.classList.remove('typing');
+                    element.classList.remove('typing'); // 打完移除游標
                 }
             }
             tick();
         }
 
+        // 點擊「隨機靈感投遞」按鈕：抽 3 個關鍵詞，隨機套入一句模板，再以打字機效果顯示
         document.getElementById('inspireBtn').addEventListener('click', () => {
             const box = document.getElementById('inspirationOutput');
             const keywords = getRandomKeywords(3);
@@ -693,41 +794,47 @@
             typewrite(box, text);
         });
 
-        /* ===== 訪客 Toast 攔截 ===== */
+        /* ---- 訪客限制 Toast 攔截 ---- */
+
+        // 顯示「請先登入」提示，並 3.5 秒後自動收起
         function showAuthToast() {
             const toast = document.getElementById('authToast');
             toast.classList.add('show');
-            // 3.5 秒後自動收起
-            clearTimeout(window._toastTimer);
+            clearTimeout(window._toastTimer);   // 先清掉舊的計時器，避免連點時出問題
             window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
+        // Toast 上的關閉按鈕 / 「立即登入」按鈕都讓 Toast 收起
         document.getElementById('authToastClose').addEventListener('click', () => {
             document.getElementById('authToast').classList.remove('show');
         });
-
         document.getElementById('authToastBtn').addEventListener('click', () => {
             document.getElementById('authToast').classList.remove('show');
         });
 
-        // 攔截所有帶 data-auth-required 的卡片
+        // 攔截所有標有 data-auth-required 屬性的卡片（目前是「心靈數據室」）：
+        // 未登入時阻止預設的跳頁行為並顯示 Toast；已登入則放行正常跳頁。
         document.querySelectorAll('[data-auth-required]').forEach(card => {
             card.addEventListener('click', e => {
                 if (!currentUser) {
-                    e.preventDefault();
-                    showAuthToast();
+                    e.preventDefault();   // 還沒登入：擋下原本的跳轉行為
+                    showAuthToast();      // 彈出提示
                 }
-                // 已登入則正常跳頁
+                // 已登入：什麼都不做，讓它正常跳頁
             });
         });
 
-        /* 頁面路由（含過場動畫）*/
+        /* ---- 頁面路由（Hash-based SPA，含淡入過場動畫） ---- */
+
+        // 顯示指定 id 的 panel，其餘 panel 隱藏；
+        // 透過先加上 fade-enter、reflow 後移除，觸發 CSS transition 做淡入效果。
         function showPage(pageId) {
             document.querySelectorAll('.panel').forEach(p => {
                 if (p.id === pageId) {
                     p.classList.add('active', 'fade-enter');
                     p.classList.remove('visible');
-                    // reflow 後移除 fade-enter，觸發 transition
+                    // 雙重 requestAnimationFrame 確保瀏覽器先完成 reflow，
+                    // 再移除 fade-enter 並加上 visible，才能正確觸發 transition
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
                             p.classList.remove('fade-enter');
@@ -740,24 +847,30 @@
             });
         }
 
+        // 根據目前 URL 的 hash 決定顯示哪個頁面：
+        // #login / #signup / #forgot 對應到三個 auth 頁面，其餘（包含空 hash）顯示首頁大廳
         function routeFromHash() {
             const hash = window.location.hash.replace('#', '');
             const allowed = ['login', 'signup', 'forgot'];
             if (allowed.includes(hash)) {
                 showPage(`page-${hash}`);
-                if (hash === 'forgot') showForgotStage(1);
+                if (hash === 'forgot') showForgotStage(1); // 進入忘記密碼頁時重置回第一階段
                 return;
             }
             showPage('hall');
         }
 
-        /* 訊息提示 */
+        /* ---- 表單訊息顯示工具 ---- */
+
+        // 統一設定驗證 / 結果訊息文字與樣式（success=true 會加上成功樣式 class）
         function setValidationMessage(element, text, success = false) {
             element.textContent = text;
             element.className = `validation-message ${success ? 'success' : ''}`;
         }
 
-        /* 登入 */
+        /* ---- 登入流程 ---- */
+
+        // 登入表單送出：基本檢查必填 → 呼叫 /api/login → 成功則更新狀態並回首頁
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
@@ -779,7 +892,7 @@
                     currentUser = result.user;
                     updateTopButton();
                     updateDashboard();
-                    window.location.hash = '';
+                    window.location.hash = ''; // 清空 hash，路由回首頁大廳
                 } else {
                     setValidationMessage(messageEl, result.message || '登入失敗，請檢查帳號密碼。');
                 }
@@ -788,7 +901,9 @@
             }
         }
 
-        /* 註冊 */
+        /* ---- 註冊流程 ---- */
+
+        // 註冊表單送出：檢查必填與兩次密碼是否一致 → 呼叫 /api/signup → 成功後導回登入頁
         async function handleSignup(event) {
             event.preventDefault();
             const username = document.getElementById('signupUsername').value.trim();
@@ -814,7 +929,7 @@
                 const result = await response.json();
                 if (response.ok && result.success) {
                     setValidationMessage(messageEl, '帳號建立完成，請登入。', true);
-                    setTimeout(() => { window.location.hash = 'login'; }, 1000);
+                    setTimeout(() => { window.location.hash = 'login'; }, 1000); // 延遲一秒讓使用者看到成功訊息
                 } else {
                     setValidationMessage(messageEl, result.message || '註冊失敗，請重試。');
                 }
@@ -823,7 +938,9 @@
             }
         }
 
-        /* 寄送驗證碼 */
+        /* ---- 忘記密碼：寄送驗證碼 ---- */
+
+        // 「寄送驗證碼」按鈕點擊：檢查 Email 必填 → 呼叫 /api/forgot-password → 成功後切到階段二
         async function sendVerificationCode() {
             const email = document.getElementById('forgotEmail').value.trim();
             const messageEl = document.getElementById('forgotEmailMessage');
@@ -849,16 +966,19 @@
             }
         }
 
+        // 切換忘記密碼頁面顯示哪個階段（1 = 輸入 Email，2 = 輸入驗證碼與新密碼）
         function showForgotStage(stage) {
             document.querySelectorAll('.forgot-stage').forEach((s, i) => {
                 s.classList.toggle('active', i + 1 === stage);
             });
         }
 
-        /* 重設密碼 */
+        /* ---- 忘記密碼：重設密碼 ---- */
+
+        // 重設密碼表單送出：檢查必填與兩次新密碼是否一致 → 呼叫 /api/reset-password → 成功後導回登入頁
         async function handleResetPassword(event) {
             event.preventDefault();
-            const email = document.getElementById('forgotEmail').value.trim();
+            const email = document.getElementById('forgotEmail').value.trim(); // 沿用階段一輸入的 Email
             const code = document.getElementById('verificationCode').value.trim();
             const password = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmNewPassword').value;
@@ -890,7 +1010,9 @@
             }
         }
 
-        /* 即時密碼驗證 */
+        /* ---- 即時表單驗證（前端體驗用，非真正的安全驗證） ---- */
+
+        // 註冊頁：監聽密碼與確認密碼欄位的 input 事件，即時顯示是否一致
         function setupPasswordMatchValidation() {
             const pw = document.getElementById('signupPassword');
             const cpw = document.getElementById('signupConfirmPassword');
@@ -905,6 +1027,7 @@
             cpw.addEventListener('input', check);
         }
 
+        // 忘記密碼頁：同樣邏輯，檢查「新密碼」與「確認新密碼」
         function setupForgotPasswordValidation() {
             const npw = document.getElementById('newPassword');
             const cnpw = document.getElementById('confirmNewPassword');
@@ -919,18 +1042,22 @@
             cnpw.addEventListener('input', check);
         }
 
-        /* 頂部按鈕 + 頭像 */
+        /* ---- 頂部登入/登出按鈕 + 頭像 ---- */
+
+        // 根據 currentUser 是否存在，切換右上角的文字、按鈕行為，並嘗試載入大頭照
         function updateTopButton() {
             const button = document.getElementById('topLoginButton');
             const nameLabel = document.getElementById('topUserName');
             const avatarInner = document.getElementById('navAvatarInner');
 
             if (currentUser) {
+                // 已登入：顯示「Hello, 使用者名稱」，按鈕變成「登出」
                 nameLabel.textContent = currentUser.username ? `Hello, ${currentUser.username}` : '訪客模式';
                 button.textContent = '登出';
                 button.onclick = handleLogout;
 
-                // 嘗試從 /api/profile 拿大頭照
+                // 嘗試呼叫 /api/profile 取得個人資料中的大頭照路徑；
+                // 有圖片就顯示圖片，沒有就用使用者名稱的第一個字母當作預設頭像
                 if (avatarInner) {
                     fetch('/api/profile')
                         .then(r => r.json())
@@ -944,14 +1071,15 @@
                                 }
                             }
                         })
-                        .catch(() => {});
+                        .catch(() => {}); // 取不到大頭照就維持原樣，不阻擋其他流程
                 }
             } else {
+                // 未登入（訪客模式）：按鈕變成「登入」，點擊導向 #login
                 nameLabel.textContent = '訪客模式';
                 button.textContent = '登入';
                 button.onclick = () => { window.location.hash = 'login'; };
 
-                // 訪客：讀 localStorage 的 emoji 頭像
+                // 訪客頭像：從 localStorage 讀取使用者自訂的 emoji（若無則預設月亮）
                 if (avatarInner) {
                     const guestEmoji = localStorage.getItem('guestAvatar') || '🌙';
                     avatarInner.textContent = guestEmoji;
@@ -960,55 +1088,63 @@
             }
         }
 
-        /* 登出 */
+        /* ---- 登出 ---- */
+
+        // 跳出確認對話框 → 呼叫 /api/logout → 清空 currentUser → 重新整理回首頁
         async function handleLogout() {
             if (!confirm('確實要登出嗎？')) return;
             try { await fetch(`${API_BASE}/logout`, { method: 'POST' }); } catch (e) {}
             currentUser = null;
             updateTopButton();
-            window.location.href = '/';
+            window.location.href = '/'; // 強制重新整理頁面，確保所有狀態回到未登入初始狀態
         }
 
-        /* 初始化 */
+        /* ---- 頁面初始化 ---- */
+
         document.addEventListener('DOMContentLoaded', async () => {
+            // 1) 先確認登入狀態，再依目前網址 hash 決定顯示哪個頁面
             await refreshSession();
             routeFromHash();
 
+            // 2) 綁定各表單的 submit / click 事件
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
             document.getElementById('signupForm').addEventListener('submit', handleSignup);
+            // 忘記密碼第一階段的 form 本身不送出（按鈕是 type="button"），這裡只是防止意外觸發預設送出行為
             document.getElementById('forgotEmailForm').addEventListener('submit', e => e.preventDefault());
             document.getElementById('sendCodeButton').addEventListener('click', sendVerificationCode);
             document.getElementById('resetPasswordForm').addEventListener('submit', handleResetPassword);
 
+            // 3) 啟用即時密碼一致性檢查
             setupPasswordMatchValidation();
             setupForgotPasswordValidation();
-            // ===== 頭像下拉選單開關 =====
-        const avatarWrapper = document.getElementById('navAvatarWrapper');
-        const userDropdown = document.getElementById('userDropdown');
-        if (avatarWrapper && userDropdown) {
-            avatarWrapper.addEventListener('click', (e) => {
-                e.stopPropagation();
-                userDropdown.classList.toggle('show');
-            });
-            document.addEventListener('click', () => {
-                userDropdown.classList.remove('show');
-            });
-        }
 
-        // ===== 卡片滑鼠光影跟隨 =====
-        document.querySelectorAll('.action-card').forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                card.style.setProperty('--mx', `${x}%`);
-                card.style.setProperty('--my', `${y}%`);
+            // 4) 頭像下拉選單開關：點頭像切換顯示/隱藏，點擊頁面其他地方則自動收起
+            const avatarWrapper = document.getElementById('navAvatarWrapper');
+            const userDropdown = document.getElementById('userDropdown');
+            if (avatarWrapper && userDropdown) {
+                avatarWrapper.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 避免觸發下面的 document click 監聽，導致選單一開就被關
+                    userDropdown.classList.toggle('show');
+                });
+                document.addEventListener('click', () => {
+                    userDropdown.classList.remove('show');
+                });
+            }
+
+            // 5) 卡片滑鼠光影跟隨效果：將滑鼠在卡片內的相對座標（百分比）寫入 CSS 變數 --mx / --my，
+            //    供 CSS 的 radial-gradient 等效果依滑鼠位置變化（card-glow-spot）
+            document.querySelectorAll('.action-card').forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    card.style.setProperty('--mx', `${x}%`);
+                    card.style.setProperty('--my', `${y}%`);
+                });
             });
         });
-    });
 
-        
-
+        // 監聽網址 hash 改變（例如使用者點上一頁/下一頁，或手動修改網址列），重新路由頁面
         window.addEventListener('hashchange', routeFromHash);
     </script>
 
